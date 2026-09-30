@@ -17,3 +17,7 @@ apps/studio/public/shots/
 
 # local tool caches
 .impeccable/
+
+# Launch example footage: public content, small, committed on purpose
+!apps/studio/public/launch/
+!apps/studio/public/launch/*.mp4

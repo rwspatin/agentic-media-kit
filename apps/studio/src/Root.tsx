@@ -3,6 +3,8 @@ import { Composition, Folder, Still } from "remotion";
 import { Promo, promoSchema, type PromoProps } from "./components/Promo";
 import { ScreenTour, calculateTourMetadata, screenTourSchema, type ScreenTourProps } from "./components/ScreenTour";
 import { DEFAULT_BRAND } from "./theme";
+import { Launch, LaunchCover, launchSchema, type LaunchProps } from "./launch/Launch";
+import { LAUNCH_DURATION } from "./launch/theme";
 
 // Instagram-native canvases. All 30fps; keep Reels <= 90s (2700 frames).
 const REEL = { width: 1080, height: 1920, fps: 30 } as const; // 9:16 Reel / Story
@@ -56,6 +58,20 @@ const tourDefaults: ScreenTourProps = {
   ],
 };
 
+// The kit's own launch pieces (src/launch/). Needs the captures in
+// public/launch/ — see src/launch/README.md to recapture them.
+const launchDefaults: LaunchProps = {
+  viewerSrc: "launch/viewer.mp4",
+  viewerCuts: [
+    { from: 1.0, to: 5.0 }, // gallery → tap "launch" → project page
+    { from: 7.0, to: 13.0 }, // video playing → scroll to Download
+  ],
+  downloadAtFrame: 256,
+  downloadPoint: { x: 0.79, y: 0.57 },
+  repoSrc: "launch/repo.jpg",
+  showSafeZones: false,
+};
+
 export const RemotionRoot: React.FC = () => (
   <>
     <Folder name="Promo">
@@ -90,6 +106,12 @@ export const RemotionRoot: React.FC = () => (
         durationInFrames={375}
         {...FEED}
       />
+    </Folder>
+
+    <Folder name="Launch">
+      <Composition id="Launch-Reel" component={Launch} schema={launchSchema} defaultProps={launchDefaults} durationInFrames={LAUNCH_DURATION} {...REEL} />
+      <Composition id="Launch-Feed" component={Launch} schema={launchSchema} defaultProps={launchDefaults} durationInFrames={LAUNCH_DURATION} {...FEED} />
+      <Still id="Launch-Cover" component={LaunchCover} schema={launchSchema} defaultProps={launchDefaults} width={REEL.width} height={REEL.height} />
     </Folder>
   </>
 );

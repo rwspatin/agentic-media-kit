@@ -15,8 +15,9 @@ The full pipeline as a skill: `.claude/skills/agentic-media/SKILL.md`.
 | `apps/media-viewer/server.js` | The whole viewer: routes, HTML templates, S3 client, and auth, in one file. Keep it that way, with no client JS and no DB. |
 | `apps/studio/src/Root.tsx` | Composition registry and default props |
 | `apps/studio/src/components/` | `Promo` (typographic), `ScreenTour` (device mockup + captions), `DemoScreen` (generated placeholder UI), `DeviceFrame`, `shared` |
+| `apps/studio/src/launch/` | The kit's launch video (terminal scene in React, real captures, jump cuts). Copy it as a starting point. |
 | `apps/studio/src/theme.ts` | Fonts, brand defaults, Instagram safe zones |
-| `apps/studio/public/` | Capture assets (`captures/`, `shots/`), gitignored |
+| `apps/studio/public/` | Capture assets (`captures/`, `shots/`), gitignored. `launch/` is the exception: small public footage for the launch example. |
 | `scripts/` | `capture-flow.sh`, `webm-to-mp4.sh`, `upload.sh` |
 | `docs/` | Detailed guides. Read the relevant one before improvising. |
 
@@ -42,7 +43,7 @@ cp apps/media-viewer/.env.example apps/media-viewer/.env   # fill in; COOKIE_SEC
 npm run viewer
 ```
 
-Compositions: `Promo-Reel`, `Promo-Feed`, `Promo-Square` (video), `Promo-Still`, `Reel-Cover`, `Square-Still` (stills), and `Tour-Reel`, `Tour-Feed` (screen tour; duration is computed from `beats`).
+Compositions: `Promo-Reel`, `Promo-Feed`, `Promo-Square` (video), `Promo-Still`, `Reel-Cover`, `Square-Still` (stills), `Tour-Reel`, `Tour-Feed` (screen tour; duration is computed from `beats`), and `Launch-Reel`, `Launch-Feed`, `Launch-Cover` (the kit's own launch video, a worked example of the whole pipeline: `src/launch/README.md`).
 
 ## Gotchas (read these)
 
