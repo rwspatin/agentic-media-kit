@@ -1,0 +1,21 @@
+{
+  "name": "agentic-media-kit",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Let AI coding agents capture a running UI, compose Instagram-ready videos with Remotion, and publish them to a password-gated viewer you can open on your phone.",
+  "author": "Renan Winter Spatin (https://github.com/rwspatin)",
+  "license": "MIT",
+  "workspaces": [
+    "apps/media-viewer",
+    "apps/studio"
+  ],
+  "scripts": {
+    "viewer": "npm run dev -w @agentic-media-kit/media-viewer",
+    "studio": "npm run studio -w @agentic-media-kit/studio",
+    "typecheck": "npm run typecheck -w @agentic-media-kit/studio",
+    "check": "node --check apps/media-viewer/server.js && npm run typecheck && for f in scripts/*.sh; do bash -n \"$f\" || exit 1; done"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}
