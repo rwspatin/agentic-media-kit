@@ -15,7 +15,7 @@ The full pipeline as a skill: `.claude/skills/agentic-media/SKILL.md`.
 | `apps/media-viewer/server.js` | The whole viewer: routes, HTML templates, S3 client, and auth, in one file. Keep it that way, with no client JS and no DB. |
 | `apps/studio/src/Root.tsx` | Composition registry and default props |
 | `apps/studio/src/components/` | `Promo` (typographic), `ScreenTour` (device mockup + captions), `DemoScreen` (generated placeholder UI), `DeviceFrame`, `shared` |
-| `apps/studio/src/launch/` | The kit's launch video (terminal scene in React, real captures, jump cuts). Copy it as a starting point. |
+| `apps/studio/src/launch/` | The kit's launch video (terminal scene in React, real captures, jump cuts, cross-dissolves). Copy it as a starting point. |
 | `apps/studio/src/theme.ts` | Fonts, brand defaults, Instagram safe zones |
 | `apps/studio/public/` | Capture assets (`captures/`, `shots/`), gitignored. `launch/` is the exception: small public footage for the launch example. |
 | `scripts/` | `capture-flow.sh`, `webm-to-mp4.sh`, `upload.sh` |

@@ -1,7 +1,7 @@
 import React from "react";
 import { AbsoluteFill, interpolate, spring, useCurrentFrame, useVideoConfig } from "remotion";
 import { safeZoneFor } from "../theme";
-import { C, FPS, mono } from "./theme";
+import { C, FPS, OVERLAP, mono } from "./theme";
 
 export const useLayout = () => {
   const { width, height } = useVideoConfig();
@@ -43,7 +43,9 @@ export const Fade: React.FC<{ delay?: number; y?: number; children: React.ReactN
   return <div style={{ opacity: p, transform: `translateY(${(1 - p) * y}px)`, ...style }}>{children}</div>;
 };
 
-// Scene envelope: quick fade + drift in/out so cuts feel like a slate change.
+// Scene envelope: consecutive scenes overlap by OVERLAP frames; the outgoing
+// one fades out while the incoming one fades in (a cross-dissolve, never a
+// dip to an empty frame).
 export const SceneFrame: React.FC<{ duration: number; fadeIn?: boolean; fadeOut?: boolean; children: React.ReactNode }> = ({
   duration,
   fadeIn = true,
@@ -51,12 +53,14 @@ export const SceneFrame: React.FC<{ duration: number; fadeIn?: boolean; fadeOut?
   children,
 }) => {
   const frame = useCurrentFrame();
-  const inP = fadeIn ? interpolate(frame, [0, 8], [0, 1], { extrapolateLeft: "clamp", extrapolateRight: "clamp" }) : 1;
-  const outP = fadeOut
-    ? interpolate(frame, [duration - 8, duration], [1, 0], { extrapolateLeft: "clamp", extrapolateRight: "clamp" })
-    : 1;
+  const clamp = { extrapolateLeft: "clamp", extrapolateRight: "clamp" } as const;
+  // Asymmetric on purpose: the outgoing scene clears in 4 frames while the
+  // incoming one is already fading in, so text never ghosts over text for
+  // long and there is always one mostly-opaque layer on screen.
+  const inP = fadeIn ? interpolate(frame, [1, OVERLAP], [0, 1], clamp) : 1;
+  const outP = fadeOut ? interpolate(frame, [duration - OVERLAP, duration - OVERLAP + 4], [1, 0], clamp) : 1;
   return (
-    <AbsoluteFill style={{ opacity: Math.min(inP, outP), transform: `translateY(${(1 - outP) * -30}px)` }}>
+    <AbsoluteFill style={{ opacity: Math.min(inP, outP), transform: `translateY(${(1 - outP) * -24}px)` }}>
       {children}
     </AbsoluteFill>
   );
@@ -116,8 +120,8 @@ export const Darkroom: React.FC = () => {
   );
 };
 
-// Slate chrome: wordmark, REC dot + running timecode, crop marks and a
-// five-tick progress rail. Decorative only, so it may sit under IG's UI.
+// Slate chrome: wordmark, REC dot + running timecode and crop marks.
+// Decorative only, so it may sit under IG's UI.
 export const Slate: React.FC = () => {
   const frame = useCurrentFrame();
   const still = useIsStill();
@@ -177,28 +181,6 @@ export const Slate: React.FC = () => {
         </span>
       </div>
     </AbsoluteFill>
-  );
-};
-
-// Scene progress ticks. Rendered UNDER the scenes so device mockups cover it.
-export const ProgressRail: React.FC<{ scenesDone: number; totalScenes: number }> = ({ scenesDone, totalScenes }) => {
-  const { isReel, z } = useLayout();
-  if (useIsStill()) return null;
-  return (
-    <div
-      style={{
-        position: "absolute",
-        left: z.left + 8,
-        right: isReel ? z.right : z.right + 8,
-        bottom: isReel ? z.bottom - 60 : 34,
-        display: "flex",
-        gap: 10,
-      }}
-    >
-      {Array.from({ length: totalScenes }, (_, i) => (
-        <div key={i} style={{ flex: 1, height: 4, borderRadius: 2, background: i < scenesDone ? C.signal : C.line }} />
-      ))}
-    </div>
   );
 };
 

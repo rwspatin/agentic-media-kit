@@ -23,13 +23,15 @@ export const C = {
 export const FPS = 30;
 
 // Scene timeline (frames at 30fps). Reel and feed share it, so the story is
-// identical and only the layout changes. Total = 930 frames = 31s.
+// identical and only the layout changes. Consecutive scenes overlap by
+// OVERLAP frames and cross-dissolve, so no frame is ever empty.
+// Total stays 441 frames: only the last scene doesn't overlap.
+export const OVERLAP = 6;
 export const SCENES = {
-  hook: { from: 0, duration: 90 },
-  terminal: { from: 90, duration: 285 },
-  viewer: { from: 375, duration: 300 },
-  repo: { from: 675, duration: 135 },
-  cta: { from: 810, duration: 120 },
+  hook: { from: 0, duration: 66 },
+  terminal: { from: 66, duration: 105 },
+  viewer: { from: 171, duration: 165 },
+  cta: { from: 336, duration: 105 },
 } as const;
 export const LAUNCH_DURATION = SCENES.cta.from + SCENES.cta.duration;
 

@@ -63,12 +63,12 @@ const tourDefaults: ScreenTourProps = {
 const launchDefaults: LaunchProps = {
   viewerSrc: "launch/viewer.mp4",
   viewerCuts: [
-    { from: 1.0, to: 5.0 }, // gallery → tap "launch" → project page
-    { from: 7.0, to: 13.0 }, // video playing → scroll to Download
+    { from: 2.2, to: 3.6 }, // gallery → tap "launch"
+    { from: 6.1, to: 8.6 }, // the reel itself playing in the viewer
+    { from: 11.3, to: 13.3 }, // scroll to the Download button (runs to scene end)
   ],
-  downloadAtFrame: 256,
-  downloadPoint: { x: 0.79, y: 0.57 },
-  repoSrc: "launch/repo.jpg",
+  downloadAtFrame: 136,
+  downloadPoint: { x: 0.79, y: 0.83 },
   showSafeZones: false,
 };
 

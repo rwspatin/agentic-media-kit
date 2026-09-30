@@ -10,18 +10,16 @@ type Line =
   | { kind: "progress"; label: string; at: number; until: number; total: number; suffix: string };
 
 export const TERMINAL_SCRIPT: Line[] = [
-  { kind: "cmd", text: "scripts/capture-flow.sh $APP_URL captures mobile", at: 16, step: 0 },
-  { kind: "out", text: 'open → set device "iPhone 14"', at: 56 },
-  { kind: "out", text: "record start captures/flow.webm", at: 66 },
-  { kind: "out", text: "flow.mp4 · 1170×2532 · h264", at: 80, ok: true },
-  { kind: "cmd", text: "npx remotion render Launch-Reel out/reel.mp4", at: 96, step: 1 },
-  { kind: "progress", label: "Rendered", at: 130, until: 176, total: LAUNCH_DURATION, suffix: "· 1080×1920 · 30fps" },
-  { kind: "out", text: "out/reel.mp4 · yuv420p · aac · faststart", at: 182, ok: true },
-  { kind: "cmd", text: "scripts/upload.sh launch out/reel-ig.mp4", at: 196, step: 2 },
-  { kind: "out", text: "HTTP 201 → /p/launch", at: 228, ok: true },
+  { kind: "cmd", text: "scripts/capture-flow.sh $APP_URL captures mobile", at: 4, step: 0 },
+  { kind: "out", text: "captures/flow.mp4 · 1170×2532 · h264", at: 22, ok: true },
+  { kind: "cmd", text: "npx remotion render Launch-Reel out/reel.mp4", at: 30, step: 1 },
+  { kind: "progress", label: "Rendered", at: 44, until: 60, total: LAUNCH_DURATION, suffix: "· 1080×1920 · 30fps" },
+  { kind: "cmd", text: "scripts/upload.sh launch out/reel.mp4", at: 64, step: 2 },
+  { kind: "out", text: "HTTP 201 → /p/launch", at: 78, ok: true },
 ];
 
-const CHARS_PER_FRAME = 1.7;
+// Fast on purpose: the whole scene is ~3.5s, the point is "three commands".
+const CHARS_PER_FRAME = 3.6;
 const typeEnd = (l: Extract<Line, { kind: "cmd" }>) => l.at + Math.ceil(l.text.length / CHARS_PER_FRAME);
 
 export const activeStep = (t: number) =>
