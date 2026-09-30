@@ -230,7 +230,7 @@ const layout = (pageTitle, body) => `<!doctype html>
   .error { color: #ff8080; font-size: 14px; }
   header nav a.signin { color: #8fa2d4; font-size: 14px; text-decoration: none; white-space: nowrap; }
   footer.credit { padding: 28px 20px 36px; text-align: center; font-size: 12px; color: #5d6a8c; }
-  footer.credit a { color: #7885a8; text-decoration: none; border-bottom: 1px solid #29335a; }
+  footer.credit a { color: #7885a8; text-decoration: none; border-bottom: 1px solid #29335a; white-space: nowrap; }
 </style>
 </head>
 <body>${body}${publicRead ? creditFooter : ""}</body>
