@@ -2,15 +2,17 @@
 
 You'll end up with a public HTTPS URL that shows a password prompt. Behind it, the viewer lists what your agents uploaded and gives you a real **Download** button for each file.
 
-Requires the [Railway CLI](https://docs.railway.com/guides/cli) (`railway login`). Commands were checked against CLI v5. Run `railway <cmd> --help` if a flag has moved.
+Requires the [Railway CLI](https://docs.railway.com/guides/cli) (`railway login`) and `jq`. Commands were checked end to end against CLI v5.30 (a real deploy from GitHub, September 2026). Run `railway <cmd> --help` if a flag has moved.
 
 ## 1. Project, service, bucket
 
 ```bash
-railway init --name media-viewer          # creates + links a project in this directory
-railway add --service media-viewer        # empty service (we deploy code in step 3)
-railway bucket create media --json        # S3-compatible object storage
+railway init --name media-viewer          # creates + links a project in this directory (add --workspace "<name>" if you have several)
+railway add --service media-viewer        # empty service (we deploy code in step 3); press Enter at the variable prompt
+railway bucket create media --region iad --json   # S3-compatible object storage
 ```
+
+`--region` is required outside an interactive terminal. Pick `sjc` (US West), `iad` (US East), `ams` (EU West), or `sin` (Asia Pacific), ideally close to where the service runs.
 
 ## 2. Wire the bucket and secrets into env vars
 
@@ -18,29 +20,35 @@ railway bucket create media --json        # S3-compatible object storage
 railway bucket credentials --bucket media --json
 ```
 
-This prints the bucket's S3 name, endpoint, and access keys. Map them onto the viewer's variables:
+This prints JSON with `bucketName`, `endpoint`, `region` (`auto`), `accessKeyId`, `secretAccessKey`, and `urlStyle` (`virtual-host`). Note that `bucketName` is the real S3 name (e.g. `media-ab12c-...`), not the `media` label you passed to `create`. Map them onto the viewer's variables:
 
 | media-viewer var | Value |
 |---|---|
-| `BUCKET_NAME` | bucket name from the credentials output |
-| `BUCKET_ENDPOINT` | S3 endpoint URL from the credentials output |
+| `BUCKET_NAME` | `bucketName` (not `media`) |
+| `BUCKET_ENDPOINT` | `endpoint` |
 | `BUCKET_REGION` | `auto` |
-| `BUCKET_ACCESS_KEY_ID` / `BUCKET_SECRET_ACCESS_KEY` | the key pair |
+| `BUCKET_ACCESS_KEY_ID` / `BUCKET_SECRET_ACCESS_KEY` | `accessKeyId` / `secretAccessKey` |
 | `AUTH_PASSWORD` | the password you'll type on your phone |
 | `SESSION_SECRET` | `openssl rand -hex 32` (signs the login cookie; rotate it to log everyone out) |
 | `UPLOAD_TOKEN` | `openssl rand -hex 32`, used by agents in `Authorization: Bearer` |
 
-Optional: `APP_TITLE`, `UNSORTED_PROJECT` (default `unsorted`), `MAX_UPLOAD_MB` (default 1024).
+Optional: `APP_TITLE`, `UNSORTED_PROJECT` (default `unsorted`), `MAX_UPLOAD_MB` (default 1024). Leave `BUCKET_FORCE_PATH_STYLE` unset: Railway buckets use virtual-host style.
 
 ```bash
+creds="$(railway bucket credentials --bucket media --json)"
 railway variable set --service media-viewer --skip-deploys \
-  BUCKET_NAME=... BUCKET_ENDPOINT=... BUCKET_REGION=auto \
-  BUCKET_ACCESS_KEY_ID=... BUCKET_SECRET_ACCESS_KEY=... \
+  BUCKET_NAME="$(jq -r .bucketName <<<"$creds")" \
+  BUCKET_ENDPOINT="$(jq -r .endpoint <<<"$creds")" \
+  BUCKET_REGION=auto \
+  BUCKET_ACCESS_KEY_ID="$(jq -r .accessKeyId <<<"$creds")" \
+  BUCKET_SECRET_ACCESS_KEY="$(jq -r .secretAccessKey <<<"$creds")" \
   SESSION_SECRET="$(openssl rand -hex 32)" UPLOAD_TOKEN="$(openssl rand -hex 32)"
+unset creds
 echo 'your-strong-password' | railway variable set AUTH_PASSWORD --stdin --service media-viewer --skip-deploys
+railway variable list --service media-viewer --kv | grep UPLOAD_TOKEN   # copy it for your agents
 ```
 
-Piping the password via `--stdin` keeps it out of your shell history.
+Piping the password via `--stdin` keeps it out of your shell history (the trailing newline is stripped).
 
 ## 3. Deploy
 
@@ -54,11 +62,21 @@ railway up apps/media-viewer --path-as-root --service media-viewer
 
 **B. From GitHub (auto-deploy on push)**
 
+Set the root directory **first**. Otherwise the first deploy builds the repo root (a monorepo with no Dockerfile) instead of the viewer. In the dashboard: **Service → Settings → Source → Root Directory** = `/apps/media-viewer`. (With the Railway MCP server: `update_service` with `root_directory: "/apps/media-viewer"`. `railway environment edit --service-config media-viewer source.rootDirectory ...` reported "No changes to apply" on CLI v5.30.) Then connect the repo, which triggers the first deploy:
+
 ```bash
 railway service source connect --repo <you>/agentic-media-kit --branch main --service media-viewer
 ```
 
-Then in the dashboard, go to **Service → Settings → Root Directory** and set it to `apps/media-viewer`. Railway picks up `apps/media-viewer/railway.json`, which builds with the Dockerfile and health-checks `GET /healthz`.
+If you connected first, set the root directory afterwards and run `railway redeploy --from-source --service media-viewer --yes`.
+
+**Health check (both options).** Railway finds `apps/media-viewer/Dockerfile` through the root directory and builds with it. The `deploy` section of `apps/media-viewer/railway.json` (health check, restart policy) was **not** applied in our test: Railway has deprecated `railway.json` config-as-code, and the deployed service had no health check. Set it on the service yourself: **Settings → Deploy → Healthcheck Path** = `/healthz` (MCP: `update_service` with `health_check_path: "/healthz"`). Then roll a fresh deploy:
+
+```bash
+railway redeploy --from-source --service media-viewer --yes
+```
+
+Plain `railway redeploy` re-runs the previous deployment's snapshot and does **not** pick up changed service settings. Use `--from-source`. The build log should end with `Path: /healthz ... Healthcheck succeeded!` (`railway logs --build --service media-viewer`).
 
 ## 4. Domain
 
@@ -69,14 +87,22 @@ railway domain your-viewer.example.com --service media-viewer   # or a custom do
 
 ## 5. Smoke test
 
+From the repo root, after `npm install`:
+
 ```bash
 export MEDIA_VIEWER_URL=https://<your-domain>
 export UPLOAD_TOKEN=<value you set>
 curl -s "$MEDIA_VIEWER_URL/healthz"                    # {"ok":true,...}
-scripts/upload.sh smoke-test apps/studio/out/reel-cover.png
+(cd apps/studio && npx remotion still Reel-Cover out/reel-cover.png)   # something to upload
+scripts/upload.sh smoke-test apps/studio/out/reel-cover.png            # expects HTTP 201
 ```
 
-Open the printed `/p/smoke-test` link on your phone and log in. You should see the image and a Download button.
+Open the printed `/p/smoke-test` link on your phone and log in. You should see the image and a Download button. Headless check of the same thing:
+
+```bash
+curl -s -c /tmp/mv.txt -o /dev/null -w '%{http_code}\n' --data-urlencode "password=$AUTH_PASSWORD" "$MEDIA_VIEWER_URL/login"   # 302
+curl -s -b /tmp/mv.txt "$MEDIA_VIEWER_URL/p/smoke-test" | grep -c reel-cover.png                                            # > 0
+```
 
 ## Operations
 

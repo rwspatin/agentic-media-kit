@@ -81,17 +81,17 @@ The viewer needs a Railway service plus a Railway bucket. The short version:
 ```bash
 railway init --name media-viewer                     # new project
 railway add --service media-viewer                   # empty service
-railway bucket create media --json                   # S3-compatible bucket
-railway bucket credentials --bucket media --json     # -> name, endpoint, keys
+railway bucket create media --region iad --json      # S3-compatible bucket (--region: sjc|iad|ams|sin)
+railway bucket credentials --bucket media --json     # -> bucketName, endpoint, accessKeyId, secretAccessKey
 railway variable set --service media-viewer --skip-deploys \
   AUTH_PASSWORD='pick-a-strong-one' SESSION_SECRET="$(openssl rand -hex 32)" \
   UPLOAD_TOKEN="$(openssl rand -hex 32)" BUCKET_REGION=auto \
   BUCKET_NAME=... BUCKET_ENDPOINT=... BUCKET_ACCESS_KEY_ID=... BUCKET_SECRET_ACCESS_KEY=...
-railway up apps/media-viewer --path-as-root --service media-viewer   # uses its Dockerfile + railway.json
+railway up apps/media-viewer --path-as-root --service media-viewer   # builds its Dockerfile
 railway domain --service media-viewer                # public https URL
 ```
 
-The full walkthrough is in [docs/deploy-railway.md](docs/deploy-railway.md). It covers wiring the bucket credentials, health checks, and an optional always-on **agent devbox** service that runs the whole pipeline remotely.
+`BUCKET_NAME` is the credentials' `bucketName` (e.g. `media-ab12c-...`), not `media`. Set the service's healthcheck path to `/healthz` in the dashboard: Railway no longer applies the `deploy` block of `railway.json`. The full walkthrough is in [docs/deploy-railway.md](docs/deploy-railway.md). It covers wiring the bucket credentials with `jq`, GitHub auto-deploy (root directory `/apps/media-viewer`), health checks, and an optional always-on **agent devbox** service that runs the whole pipeline remotely.
 
 ## Guides
 

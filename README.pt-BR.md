@@ -32,7 +32,7 @@ scripts/upload.sh meu-app apps/studio/out/tour.mp4
 
 ## Deploy no Railway
 
-O passo a passo completo está em [docs/deploy-railway.md](docs/deploy-railway.md). Em resumo: crie um projeto, um serviço apontando para `apps/media-viewer`, um bucket (`railway bucket create`) e passe as credenciais dele para as variáveis `BUCKET_*`. Defina também `AUTH_PASSWORD`, `SESSION_SECRET` e `UPLOAD_TOKEN`, e gere um domínio.
+O passo a passo completo está em [docs/deploy-railway.md](docs/deploy-railway.md). Em resumo: crie um projeto, um serviço com Root Directory `/apps/media-viewer`, um bucket (`railway bucket create media --region iad`) e passe as credenciais dele para as variáveis `BUCKET_*` (`BUCKET_NAME` é o `bucketName` das credenciais, não `media`). Defina também `AUTH_PASSWORD`, `SESSION_SECRET` e `UPLOAD_TOKEN`, configure o healthcheck `/healthz` no serviço (o Railway não aplica mais o bloco `deploy` do `railway.json`) e gere um domínio.
 
 ## Guias (em inglês)
 
