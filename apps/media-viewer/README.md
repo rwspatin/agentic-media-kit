@@ -8,8 +8,8 @@ A password-gated, single-file web app for reviewing and downloading videos and i
 |---|---|---|
 | `GET /healthz` | none | Liveness (`{"ok":true}`). Does not touch the bucket. |
 | `GET /login`, `POST /login`, `POST /logout` | none | Shared-password login, backed by an HMAC-signed cookie valid for 30 days |
-| `GET /` | cookie | Lists projects (first path segment of each object key) |
-| `GET /p/:project` | cookie | Grid of videos and images, each with inline playback and a Download button |
+| `GET /` | cookie (none if `PUBLIC_READ=true`) | Lists projects (first path segment of each object key) |
+| `GET /p/:project` | cookie (none if `PUBLIC_READ=true`) | Grid of videos and images, each with inline playback and a Download button |
 | `POST /upload` | cookie **or** `Authorization: Bearer $UPLOAD_TOKEN` | Multipart upload: fields `project` and `file`. Browsers get redirected; token requests get `201` JSON `{ok, project, key, size, url}`. |
 
 ```bash
@@ -20,7 +20,13 @@ curl -H "Authorization: Bearer $UPLOAD_TOKEN" -F project=my-app -F "file=@reel.m
 ## Env
 
 See [`.env.example`](.env.example). Required: `AUTH_PASSWORD`, `SESSION_SECRET`, `BUCKET_NAME`, `BUCKET_ENDPOINT`, `BUCKET_ACCESS_KEY_ID`, `BUCKET_SECRET_ACCESS_KEY`. The server refuses to boot without them.
-Optional: `UPLOAD_TOKEN`, `UNSORTED_PROJECT` (default `unsorted`), `APP_TITLE`, `MAX_UPLOAD_MB`, `BUCKET_REGION` (default `auto`), `BUCKET_FORCE_PATH_STYLE` (set `true` for MinIO), `COOKIE_SECURE`, `PORT`.
+Optional: `UPLOAD_TOKEN`, `PUBLIC_READ`, `UNSORTED_PROJECT` (default `unsorted`), `APP_TITLE`, `MAX_UPLOAD_MB`, `BUCKET_REGION` (default `auto`), `BUCKET_FORCE_PATH_STYLE` (set `true` for MinIO), `COOKIE_SECURE`, `PORT`.
+
+## Public read-only mode
+
+Set `PUBLIC_READ=true` to turn the viewer into a public gallery (a demo, a portfolio, a launch page). Anonymous visitors can browse projects, play media, and use Download. Everything that writes stays locked: the upload form and the "New project" box are hidden unless you're signed in, `POST /upload` still needs the password cookie or the bearer token, and a small "Sign in to upload" link replaces "Log out". A footer credits the kit. Default is `false` (everything behind the password).
+
+Anything in the bucket becomes public in this mode, so don't mix private reviews and public content in the same bucket.
 
 ## How it works
 

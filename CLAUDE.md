@@ -56,6 +56,7 @@ Compositions: `Promo-Reel`, `Promo-Feed`, `Promo-Square` (video), `Promo-Still`,
 - **Safe zones.** Keep text out of the Instagram UI overlay (`safeZoneFor()` in `theme.ts`). Preview it with `"showSafeZones": true` and **turn it off** before the final render.
 - **Fonts load from Google Fonts at render time**, which needs outbound HTTPS.
 - **Uploads are buffered in memory** by the viewer (`MAX_UPLOAD_MB`, default 1024).
+- **`PUBLIC_READ=true`** makes browsing (`/`, `/p/:project`, media URLs) public; uploads still need the cookie or bearer token. Everything in that bucket is then world-readable, so never publish private captures to a public viewer.
 - **Project slugs** are lowercased and sanitized to `[a-z0-9-]`. Files at the bucket root appear under `UNSORTED_PROJECT` (default `unsorted`).
 
 ## Rules

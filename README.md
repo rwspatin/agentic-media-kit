@@ -29,7 +29,7 @@ Everything is scriptable and has no GUI dependencies, so it runs on a remote dev
 
 | Path | What it is |
 |---|---|
-| [`apps/media-viewer`](apps/media-viewer) | A single-file Express app with no client JS. It lists projects (bucket prefixes) and plays videos and images from presigned URLs. Download buttons force a real file save. Humans log in with a password cookie; agents upload with `Authorization: Bearer`. It has `/healthz` and ships with a Dockerfile and `railway.json`. |
+| [`apps/media-viewer`](apps/media-viewer) | A single-file Express app with no client JS. It lists projects (bucket prefixes) and plays videos and images from presigned URLs. Download buttons force a real file save. Humans log in with a password cookie; agents upload with `Authorization: Bearer`. Optional `PUBLIC_READ=true` turns it into a public read-only gallery. It has `/healthz` and ships with a Dockerfile and `railway.json`. |
 | [`apps/studio`](apps/studio) | A Remotion 4 template with zod-typed props. Compositions: `Promo-Reel` (1080×1920), `Promo-Feed` (1080×1350), `Promo-Square` (1080×1080), `Promo-Still`, `Reel-Cover`, `Square-Still`, and `Tour-Reel` / `Tour-Feed`. The tour frames screenshots or screen recordings in a phone or browser mockup with step captions. A generated demo UI means everything renders with zero assets. |
 | [`scripts/`](scripts) | `capture-flow.sh` records a scripted flow with agent-browser. `webm-to-mp4.sh` turns any video into an Instagram-safe MP4. `upload.sh` publishes to the viewer. |
 | [`.claude/skills/agentic-media`](.claude/skills/agentic-media/SKILL.md) | A Claude Code skill that runs the whole pipeline. |

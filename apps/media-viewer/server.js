@@ -2,6 +2,7 @@
 // videos/images from any S3-compatible bucket (built for Railway buckets).
 // Humans log in with a shared password (cookie); agents upload with a bearer
 // token. No database, no client-side JS: the bucket is the source of truth.
+// With PUBLIC_READ=true, browsing is open to anyone; writes still need auth.
 import crypto from "node:crypto";
 import express from "express";
 import multer from "multer";
@@ -27,6 +28,10 @@ const {
   // Optional: enables `Authorization: Bearer <token>` on POST /upload so
   // agents/scripts can publish without the cookie login dance.
   UPLOAD_TOKEN,
+  // Optional: "true" lets anonymous visitors browse projects and play/download
+  // media (a public demo or portfolio). Uploading still requires the password
+  // cookie or the bearer token.
+  PUBLIC_READ = "false",
   // Optional: name of the pseudo-project for files stored at the bucket root.
   UNSORTED_PROJECT = "unsorted",
   APP_TITLE = "Media Viewer",
@@ -87,6 +92,8 @@ const safeEqual = (a, b) => {
   return crypto.timingSafeEqual(ha, hb);
 };
 
+const publicRead = PUBLIC_READ === "true";
+
 const COOKIE_NAME = "mv_session";
 const COOKIE_MAX_AGE = 60 * 60 * 24 * 30; // 30 days
 const cookieOpts = { httpOnly: true, secure: COOKIE_SECURE !== "false", sameSite: "lax", path: "/" };
@@ -119,6 +126,12 @@ const requireAuth = (req, res, next) => {
   res.redirect("/login");
 };
 
+// Browsing: open to everyone in PUBLIC_READ mode, otherwise same as requireAuth.
+const requireRead = (req, res, next) => {
+  if (publicRead || isAuthed(req)) return next();
+  res.redirect("/login");
+};
+
 // Upload accepts either a browser session or the agent bearer token. Checked
 // BEFORE multer so unauthenticated requests never buffer a body.
 const requireUploadAuth = (req, res, next) => {
@@ -142,6 +155,8 @@ const upload = multer({
 });
 
 const title = escapeHtml(APP_TITLE);
+
+const creditFooter = `<footer class="credit">Built with agentic-media-kit → <a href="https://github.com/rwspatin/agentic-media-kit">github.com/rwspatin/agentic-media-kit</a></footer>`;
 
 const layout = (pageTitle, body) => `<!doctype html>
 <html lang="en">
@@ -213,12 +228,17 @@ const layout = (pageTitle, body) => `<!doctype html>
   .new-project input { flex: 1; }
   .new-project button { flex-shrink: 0; }
   .error { color: #ff8080; font-size: 14px; }
+  header nav a.signin { color: #8fa2d4; font-size: 14px; text-decoration: none; white-space: nowrap; }
+  footer.credit { padding: 28px 20px 36px; text-align: center; font-size: 12px; color: #5d6a8c; }
+  footer.credit a { color: #7885a8; text-decoration: none; border-bottom: 1px solid #29335a; }
 </style>
 </head>
-<body>${body}</body>
+<body>${body}${publicRead ? creditFooter : ""}</body>
 </html>`;
 
 const logoutForm = `<form method="post" action="/logout"><button type="submit" class="link">Log out</button></form>`;
+const signInLink = `<a class="signin" href="/login">Sign in to upload</a>`;
+const navFor = (authed) => (authed ? logoutForm : signInLink);
 
 // Unauthenticated liveness probe for Railway/Docker health checks. Does not
 // touch the bucket, so it stays green even if storage is misconfigured.
@@ -257,8 +277,9 @@ app.post("/logout", (req, res) => {
 
 // Projects are just first-path-segment prefixes in the bucket ("demo/foo.mp4"
 // -> project "demo") — no database needed, S3 IS the source of truth.
-app.get("/", requireAuth, async (req, res, next) => {
+app.get("/", requireRead, async (req, res, next) => {
   try {
+    const authed = isAuthed(req);
     const list = await s3.send(
       new ListObjectsV2Command({ Bucket: BUCKET_NAME, Delimiter: "/" })
     );
@@ -275,15 +296,15 @@ app.get("/", requireAuth, async (req, res, next) => {
     const body = `
       <header>
         <div class="titles"><h1>${title}</h1></div>
-        <nav>${logoutForm}</nav>
+        <nav>${navFor(authed)}</nav>
       </header>
       <main>
-        <form class="new-project" method="get" action="/go">
+        ${authed ? `<form class="new-project" method="get" action="/go">
           <input type="text" name="project" placeholder="New project (e.g. my-app)" required />
           <button type="submit">Open</button>
-        </form>
+        </form>` : ""}
         <div class="projects">
-          ${links}${rootLink || (projects.length ? "" : `<p class="empty">No projects yet. Create one above.</p>`)}
+          ${links}${rootLink || (projects.length ? "" : `<p class="empty">No projects yet.${authed ? " Create one above." : ""}</p>`)}
         </div>
       </main>`;
     res.send(layout("Projects", body));
@@ -296,8 +317,9 @@ app.get("/go", requireAuth, (req, res) => {
   res.redirect(`/p/${encodeURIComponent(slugify(req.query.project))}`);
 });
 
-app.get("/p/:project", requireAuth, async (req, res, next) => {
+app.get("/p/:project", requireRead, async (req, res, next) => {
   try {
+    const authed = isAuthed(req);
     const project = slugify(req.params.project);
     const isRoot = project === UNSORTED_PROJECT;
     const prefix = isRoot ? "" : `${project}/`;
@@ -348,15 +370,15 @@ app.get("/p/:project", requireAuth, async (req, res, next) => {
           <h1>${escapeHtml(project)}</h1>
           <span class="crumb"><a href="/">← projects</a></span>
         </div>
-        <nav>${logoutForm}</nav>
+        <nav>${navFor(authed)}</nav>
       </header>
       <main>
-        <form class="upload-card" method="post" action="/upload" enctype="multipart/form-data">
+        ${authed ? `<form class="upload-card" method="post" action="/upload" enctype="multipart/form-data">
           <strong>Upload to "${escapeHtml(project)}"</strong>
           <input type="hidden" name="project" value="${escapeHtml(project)}" />
           <input type="file" name="file" accept="video/*,image/*" required />
           <button type="submit">Upload</button>
-        </form>
+        </form>` : ""}
         <div class="grid">
           ${cards.length ? cards.join("") : `<p class="empty">Nothing in this project yet.</p>`}
         </div>

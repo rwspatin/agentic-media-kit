@@ -32,7 +32,7 @@ This prints JSON with `bucketName`, `endpoint`, `region` (`auto`), `accessKeyId`
 | `SESSION_SECRET` | `openssl rand -hex 32` (signs the login cookie; rotate it to log everyone out) |
 | `UPLOAD_TOKEN` | `openssl rand -hex 32`, used by agents in `Authorization: Bearer` |
 
-Optional: `APP_TITLE`, `UNSORTED_PROJECT` (default `unsorted`), `MAX_UPLOAD_MB` (default 1024). Leave `BUCKET_FORCE_PATH_STYLE` unset: Railway buckets use virtual-host style.
+Optional: `PUBLIC_READ=true` (public read-only gallery: anyone can browse and download, uploads still need auth; see below), `APP_TITLE`, `UNSORTED_PROJECT` (default `unsorted`), `MAX_UPLOAD_MB` (default 1024). Leave `BUCKET_FORCE_PATH_STYLE` unset: Railway buckets use virtual-host style.
 
 ```bash
 creds="$(railway bucket credentials --bucket media --json)"
@@ -110,6 +110,18 @@ curl -s -b /tmp/mv.txt "$MEDIA_VIEWER_URL/p/smoke-test" | grep -c reel-cover.png
 - **`/healthz` is green but pages 500.** The health check deliberately doesn't touch the bucket. Check the bucket variables and `railway logs --service media-viewer`.
 - **Upload limit.** Files are buffered in memory up to `MAX_UPLOAD_MB`. Keep the service's memory above that, or lower the limit.
 - **Rotating secrets.** Changing `SESSION_SECRET` invalidates all cookies. Changing `UPLOAD_TOKEN` breaks agents until they get the new value.
+
+## Optional: a public read-only demo
+
+To share a gallery publicly (a launch page, a portfolio), turn on read-only mode:
+
+```bash
+railway variable set --service media-viewer PUBLIC_READ=true    # triggers a redeploy
+curl -s -o /dev/null -w '%{http_code}\n' "$MEDIA_VIEWER_URL/"   # 200 without login
+curl -s -o /dev/null -w '%{http_code}\n' -F project=x -F file=@README.md "$MEDIA_VIEWER_URL/upload"   # 302 to /login
+```
+
+Anonymous visitors get the gallery, players, and Download buttons, plus a "Sign in to upload" link. Uploads still require the password cookie or `UPLOAD_TOKEN`. Every object in the bucket becomes public, so use a separate viewer and bucket for private reviews.
 
 ## Optional: a remote agent devbox
 
