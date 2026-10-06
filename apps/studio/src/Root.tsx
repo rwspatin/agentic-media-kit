@@ -5,10 +5,12 @@ import { ScreenTour, calculateTourMetadata, screenTourSchema, type ScreenTourPro
 import { DEFAULT_BRAND } from "./theme";
 import { Launch, LaunchCover, launchSchema, type LaunchProps } from "./launch/Launch";
 import { LAUNCH_DURATION } from "./launch/theme";
+import { BeforeAfter, beforeAfterSchema, calculateBeforeAfterMetadata, type BeforeAfterProps } from "./before-after/BeforeAfter";
 
 // Instagram-native canvases. All 30fps; keep Reels <= 90s (2700 frames).
 const REEL = { width: 1080, height: 1920, fps: 30 } as const; // 9:16 Reel / Story
 const FEED = { width: 1080, height: 1350, fps: 30 } as const; // 4:5 feed post
+const LANDSCAPE = { width: 1920, height: 1080, fps: 30 } as const; // 16:9 (X, LinkedIn, YouTube)
 const SQUARE = { width: 1080, height: 1080, fps: 30 } as const; // 1:1
 
 const promoDefaults: PromoProps = {
@@ -72,6 +74,70 @@ const launchDefaults: LaunchProps = {
   showSafeZones: false,
 };
 
+// Before/after of a page redesign. The defaults describe the bundled demo
+// (apps/studio/before-after-demo/, captured into public/before-after/demo/).
+// Point capturesDir at your own capture and rewrite the copy; meta.json is
+// loaded by calculateMetadata, which also derives the duration.
+const beforeAfterDefaults: BeforeAfterProps = {
+  accent: DEFAULT_BRAND.accent,
+  bg: DEFAULT_BRAND.bg,
+  fg: DEFAULT_BRAND.fg,
+  capturesDir: "before-after/demo",
+  beforeLabel: "Before",
+  afterLabel: "After",
+  intro: {
+    eyebrow: "Before / after · landing page",
+    title: "Same copy. Same sections.",
+    titleAccent: "A calmer system.",
+    sub: "Before on the left. After on the right.",
+  },
+  desktop: {
+    beats: [
+      { section: 0, caption: "Gradient background and gradient headline → flat ground, a serif headline.", durationInFrames: 90 },
+      { section: 1, caption: "Floating cards with emoji icons → a ruled grid on shared hairlines.", durationInFrames: 90 },
+      { section: 2, caption: "Gradient number bubbles → plain step labels in one accent.", durationInFrames: 75 },
+      { section: 3, caption: "Pills, glows and a scaled-up plan → corners of 4px or less, one tinted cell.", durationInFrames: 90 },
+      { section: 4, caption: "An all-caps eyebrow on every section → none. The quote stands alone.", durationInFrames: 90 },
+    ],
+  },
+  mobile: {
+    eyebrow: "390 px",
+    title: "On a phone,",
+    titleAccent: "too.",
+    sub: "The cards stack into one column of shared hairlines instead of floating in a gutter.",
+    beats: [
+      { section: 0, durationInFrames: 60 },
+      { section: 1, durationInFrames: 60 },
+      { section: 3, durationInFrames: 75 },
+      { section: 4, durationInFrames: 45 },
+    ],
+  },
+  checklist: {
+    title: "Audit",
+    label: "Checked on the before page",
+    flagLabel: "Removed",
+    items: [
+      { text: "Purple-to-pink gradient background", flagged: true },
+      { text: "Gradient text on headline and prices", flagged: true },
+      { text: "Pills and corners above 4px", flagged: true },
+      { text: "Shadows and glows under cards", flagged: true },
+      { text: "Emoji standing in for icons", flagged: true },
+      { text: "All-caps eyebrow on every section", flagged: true },
+      { text: "Three accent hues competing", flagged: true },
+      { text: "Translucent, blurred sticky header", flagged: true },
+      { text: "Copy rewritten", flagged: false },
+      { text: "Sections reordered", flagged: false },
+    ],
+    summary: "Eight patterns removed. The copy and the section order did not change.",
+  },
+  outro: {
+    title: "Same page,",
+    titleAccent: "calmer system.",
+    left: "Captured with agent-browser · composed with Remotion",
+    right: "agentic-media-kit",
+  },
+};
+
 export const RemotionRoot: React.FC = () => (
   <>
     <Folder name="Promo">
@@ -112,6 +178,27 @@ export const RemotionRoot: React.FC = () => (
       <Composition id="Launch-Reel" component={Launch} schema={launchSchema} defaultProps={launchDefaults} durationInFrames={LAUNCH_DURATION} {...REEL} />
       <Composition id="Launch-Feed" component={Launch} schema={launchSchema} defaultProps={launchDefaults} durationInFrames={LAUNCH_DURATION} {...FEED} />
       <Still id="Launch-Cover" component={LaunchCover} schema={launchSchema} defaultProps={launchDefaults} width={REEL.width} height={REEL.height} />
+    </Folder>
+
+    <Folder name="BeforeAfter">
+      <Composition
+        id="BeforeAfter-Landscape"
+        component={BeforeAfter}
+        schema={beforeAfterSchema}
+        defaultProps={beforeAfterDefaults}
+        calculateMetadata={calculateBeforeAfterMetadata}
+        durationInFrames={1200}
+        {...LANDSCAPE}
+      />
+      <Composition
+        id="BeforeAfter-Feed"
+        component={BeforeAfter}
+        schema={beforeAfterSchema}
+        defaultProps={beforeAfterDefaults}
+        calculateMetadata={calculateBeforeAfterMetadata}
+        durationInFrames={1200}
+        {...FEED}
+      />
     </Folder>
   </>
 );

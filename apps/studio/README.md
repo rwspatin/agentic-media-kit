@@ -14,8 +14,11 @@ npx remotion render Tour-Reel out/tour.mp4 --codec=h264 --pixel-format=yuv420p -
 | `Promo-Reel` / `Promo-Feed` / `Promo-Square` | video | 1080×1920 / 1080×1350 / 1080×1080 |
 | `Promo-Still` / `Reel-Cover` / `Square-Still` | still | 1080×1350 / 1080×1920 / 1080×1080 |
 | `Tour-Reel` / `Tour-Feed` | video (duration = sum of beats) | 1080×1920 (phone) / 1080×1350 (browser) |
+| `BeforeAfter-Landscape` / `BeforeAfter-Feed` | video (duration = sum of scenes) | 1920×1080 / 1080×1350 |
 
 Screen tour beats take `media: {type: "image"|"video"|"demo", src?, demoVariant?, startAtSeconds?, position?}` and an optional `zoom: {x, y, from, to}` push-in. Put captures in `public/` (see [public/README.md](public/README.md)).
+
+Before/after: capture with `scripts/capture-before-after.sh`, and set `capturesDir` to the folder under `public/`. `npm run before-after` renders the bundled demo. Details: [../../docs/before-after.md](../../docs/before-after.md).
 
 Brand: edit `src/theme.ts` (fonts, default colors) or override per render. Specs and codec flags: [../../docs/instagram.md](../../docs/instagram.md).
 

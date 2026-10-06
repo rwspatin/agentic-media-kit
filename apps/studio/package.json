@@ -10,7 +10,8 @@
     "still": "remotion still",
     "reel": "remotion render Promo-Reel out/promo-reel.mp4 --codec=h264 --pixel-format=yuv420p --audio-codec=aac",
     "tour": "remotion render Tour-Reel out/tour-reel.mp4 --codec=h264 --pixel-format=yuv420p --audio-codec=aac",
-    "cover": "remotion still Reel-Cover out/reel-cover.png"
+    "cover": "remotion still Reel-Cover out/reel-cover.png",
+    "before-after": "remotion render BeforeAfter-Landscape out/before-after.mp4 --codec=h264 --pixel-format=yuv420p"
   },
   "dependencies": {
     "@remotion/cli": "4.0.507",

@@ -15,10 +15,11 @@ The full pipeline as a skill: `.claude/skills/agentic-media/SKILL.md`.
 | `apps/media-viewer/server.js` | The whole viewer: routes, HTML templates, S3 client, and auth, in one file. Keep it that way, with no client JS and no DB. |
 | `apps/studio/src/Root.tsx` | Composition registry and default props |
 | `apps/studio/src/components/` | `Promo` (typographic), `ScreenTour` (device mockup + captions), `DemoScreen` (generated placeholder UI), `DeviceFrame`, `shared` |
+| `apps/studio/src/before-after/` | `BeforeAfter`: two versions of a page scrolled in sync with captions, a phone scene, a checklist, and an outro. Assets come from `scripts/capture-before-after.sh`. Demo pages live in `apps/studio/before-after-demo/`. |
 | `apps/studio/src/launch/` | The kit's launch video (terminal scene in React, real captures, jump cuts, cross-dissolves). Copy it as a starting point. |
 | `apps/studio/src/theme.ts` | Fonts, brand defaults, Instagram safe zones |
 | `apps/studio/public/` | Capture assets (`captures/`, `shots/`), gitignored. `launch/` is the exception: small public footage for the launch example. |
-| `scripts/` | `capture-flow.sh`, `webm-to-mp4.sh`, `upload.sh` |
+| `scripts/` | `capture-flow.sh`, `capture-before-after.sh` (+ `lib/tile-captures.mjs`), `webm-to-mp4.sh`, `upload.sh` |
 | `docs/` | Detailed guides. Read the relevant one before improvising. |
 
 ## Commands
@@ -27,6 +28,7 @@ The full pipeline as a skill: `.claude/skills/agentic-media/SKILL.md`.
 # Capture (verify flags with: agent-browser skills get core --full)
 scripts/capture-flow.sh <url> apps/studio/public/captures mobile|desktop
 agent-browser open <url> && agent-browser set device "iPhone 14" && agent-browser screenshot out.png
+scripts/capture-before-after.sh <before-url> <after-url> apps/studio/public/before-after/<name> both
 
 # Compose (from apps/studio)
 npx tsc --noEmit
@@ -43,7 +45,7 @@ cp apps/media-viewer/.env.example apps/media-viewer/.env   # fill in; COOKIE_SEC
 npm run viewer
 ```
 
-Compositions: `Promo-Reel`, `Promo-Feed`, `Promo-Square` (video), `Promo-Still`, `Reel-Cover`, `Square-Still` (stills), `Tour-Reel`, `Tour-Feed` (screen tour; duration is computed from `beats`), and `Launch-Reel`, `Launch-Feed`, `Launch-Cover` (the kit's own launch video, a worked example of the whole pipeline: `src/launch/README.md`).
+Compositions: `Promo-Reel`, `Promo-Feed`, `Promo-Square` (video), `Promo-Still`, `Reel-Cover`, `Square-Still` (stills), `Tour-Reel`, `Tour-Feed` (screen tour; duration is computed from `beats`), `BeforeAfter-Landscape`, `BeforeAfter-Feed` (before/after of a page; duration and `meta.json` come from `calculateMetadata`, see `docs/before-after.md`), and `Launch-Reel`, `Launch-Feed`, `Launch-Cover` (the kit's own launch video, a worked example of the whole pipeline: `src/launch/README.md`).
 
 ## Gotchas (read these)
 
