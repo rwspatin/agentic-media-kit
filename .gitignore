@@ -11,6 +11,8 @@ out/
 *.mov
 apps/studio/public/captures/
 apps/studio/public/shots/
+apps/studio/public/before-after/*
+!apps/studio/public/before-after/demo/
 
 # agent-browser state files can contain session tokens
 *.state.json

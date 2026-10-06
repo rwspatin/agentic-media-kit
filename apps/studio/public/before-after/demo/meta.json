@@ -1,0 +1,54 @@
+{
+ "after-desktop": {
+  "width": 1440,
+  "total": 2783,
+  "anchors": [
+   75,
+   641,
+   1113,
+   1619,
+   2241
+  ],
+  "tiles": 1,
+  "tile": 3000
+ },
+ "after-mobile": {
+  "width": 780,
+  "total": 7426,
+  "anchors": [
+   134,
+   1144,
+   2608,
+   4182,
+   6422
+  ],
+  "tiles": 3,
+  "tile": 3000
+ },
+ "before-desktop": {
+  "width": 1440,
+  "total": 3282,
+  "anchors": [
+   81,
+   678,
+   1311,
+   1899,
+   2572
+  ],
+  "tiles": 2,
+  "tile": 3000
+ },
+ "before-mobile": {
+  "width": 780,
+  "total": 9350,
+  "anchors": [
+   146,
+   1318,
+   3646,
+   5610,
+   8042
+  ],
+  "tiles": 4,
+  "tile": 3000
+ }
+}

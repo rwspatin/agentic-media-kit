@@ -16,6 +16,7 @@ Ask only if it's truly ambiguous. Otherwise infer:
 | "check / validate the UI", "screenshot it" | 1 (+ look at the images) |
 | "make a reel / promo / post" with no app to capture | 2 (Promo-* or Tour with demo media) → 3 |
 | "record the flow and make a reel", "product tour" | 1 → 2 → 3 |
+| "before/after video", "show the redesign" | 1 (`capture-before-after.sh`) → 2 (`BeforeAfter-*`) → 3 |
 | "upload this file" | 3 |
 
 Gather: target URL, mobile or desktop, brand (name, accent/bg/fg hex, copy), placement (Reel 9:16, feed 4:5, square), and the viewer project slug (default: the product name, slugified).
@@ -35,6 +36,7 @@ agent-browser screenshot "$KIT/apps/studio/public/shots/01.png"
 "$KIT/scripts/capture-flow.sh" <url> "$KIT/apps/studio/public/captures" mobile
 ```
 
+- **Before/after of a page:** `"$KIT/scripts/capture-before-after.sh" <before-url> <after-url> "$KIT/apps/studio/public/before-after/<name>" both` writes JPG tiles plus `meta.json` with section anchors. Use `CAPTURE_CSS=<file.css>` to un-stick headers or hide banners, and `SECTION_SELECTOR` if sections aren't `main > section`. See `docs/before-after.md`.
 - Log in **before** `record start`. Use semantic locators (`find role button click --name ...`) in scripts, not `@eN` refs.
 - In **T3 Code**, you can use `preview_open` → `preview_resize {mode:"preset",preset:"iphone-12-pro"}` → `preview_recording_start` → drive the flow → `preview_recording_stop` (returns a file path), then `scripts/webm-to-mp4.sh <path> <kit>/apps/studio/public/captures/flow.mp4`. See `docs/t3-code.md`.
 - **Validate:** open the PNGs with your image tool and describe what you see. If the UI is broken, say so (and fix it if that's in scope) before making marketing out of it.
@@ -71,6 +73,7 @@ npx remotion still  Tour-Reel out/cover.png --props=./tour.json --frame=30
 | `Tour-Reel` / `Tour-Feed` | 1080×1920 / 1080×1350 | Captures in a phone or browser mockup with step captions. Duration = sum of beats. |
 | `Promo-Reel` / `Promo-Feed` / `Promo-Square` | 9:16 / 4:5 / 1:1 | Typographic promo. Props: `brand, eyebrow, headline, subheadline, cta, accent, bg, fg` |
 | `Reel-Cover` / `Promo-Still` / `Square-Still` | stills | Cover and feed images, using the same Promo props |
+| `BeforeAfter-Landscape` / `BeforeAfter-Feed` | 1920×1080 / 1080×1350 | Two versions of a page scrolled in sync with captions, then phone, checklist and outro. Props: `capturesDir`, `intro`, `desktop.beats[{section, caption, durationInFrames}]`, optional `mobile`/`checklist`, `outro`. Duration = sum of scenes. |
 
 Rules:
 - `device: "phone"` for mobile captures, `"browser"` for desktop. `media.type: "demo"` (variants `dashboard | list | success`) when there's nothing to capture.

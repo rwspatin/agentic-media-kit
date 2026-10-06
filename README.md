@@ -30,8 +30,8 @@ Everything is scriptable and has no GUI dependencies, so it runs on a remote dev
 | Path | What it is |
 |---|---|
 | [`apps/media-viewer`](apps/media-viewer) | A single-file Express app with no client JS. It lists projects (bucket prefixes) and plays videos and images from presigned URLs. Download buttons force a real file save. Humans log in with a password cookie; agents upload with `Authorization: Bearer`. Optional `PUBLIC_READ=true` turns it into a public read-only gallery. It has `/healthz` and ships with a Dockerfile and `railway.json`. |
-| [`apps/studio`](apps/studio) | A Remotion 4 template with zod-typed props. Compositions: `Promo-Reel` (1080×1920), `Promo-Feed` (1080×1350), `Promo-Square` (1080×1080), `Promo-Still`, `Reel-Cover`, `Square-Still`, and `Tour-Reel` / `Tour-Feed`. The tour frames screenshots or screen recordings in a phone or browser mockup with step captions. A generated demo UI means everything renders with zero assets. |
-| [`scripts/`](scripts) | `capture-flow.sh` records a scripted flow with agent-browser. `webm-to-mp4.sh` turns any video into an Instagram-safe MP4. `upload.sh` publishes to the viewer. |
+| [`apps/studio`](apps/studio) | A Remotion 4 template with zod-typed props. Compositions: `Promo-Reel` (1080×1920), `Promo-Feed` (1080×1350), `Promo-Square` (1080×1080), `Promo-Still`, `Reel-Cover`, `Square-Still`, `Tour-Reel` / `Tour-Feed`, and `BeforeAfter-Landscape` / `BeforeAfter-Feed`. The tour frames screenshots or screen recordings in a phone or browser mockup with step captions. The before/after scrolls two versions of a page side by side. A generated demo UI and a bundled demo page mean everything renders with zero setup. |
+| [`scripts/`](scripts) | `capture-flow.sh` records a scripted flow with agent-browser. `capture-before-after.sh` takes full-page captures of two versions of a page for the before/after video. `webm-to-mp4.sh` turns any video into an Instagram-safe MP4. `upload.sh` publishes to the viewer. |
 | [`.claude/skills/agentic-media`](.claude/skills/agentic-media/SKILL.md) | A Claude Code skill that runs the whole pipeline. |
 | [`docs/`](docs) | Capture, T3 Code, Instagram specs, Railway deploy, remote workflow. |
 | [`CLAUDE.md`](CLAUDE.md) / [`AGENTS.md`](AGENTS.md) | The operating guide agents read first. |
@@ -74,6 +74,22 @@ scripts/upload.sh my-app apps/studio/out/my-tour-ig.mp4 apps/studio/out/cover.pn
 
 Run the viewer locally with `cp apps/media-viewer/.env.example apps/media-viewer/.env`. Fill in the values, set `COOKIE_SECURE=false`, then run `npm run viewer`.
 
+## Before/after videos
+
+Redesigned a page? `BeforeAfter-Landscape` (1920×1080) puts the old and new versions side by side. Both scroll in sync, section by section, with a caption for each section. Then come the same pages on a phone, an optional checklist of what changed, and an outro. `BeforeAfter-Feed` (1080×1350) stacks the panels for a 4:5 post.
+
+```bash
+# capture both versions (desktop + mobile), tiled, with section anchors in meta.json
+scripts/capture-before-after.sh https://example.com http://localhost:3000 apps/studio/public/before-after/home both
+
+# render: point capturesDir at it and write one caption per section
+cd apps/studio
+npx remotion render BeforeAfter-Landscape out/before-after.mp4 --props=./ba.json --codec=h264 --pixel-format=yuv420p
+npm run before-after        # the bundled demo: a fictional landing page, before and after
+```
+
+Props, beats ↔ sections, `CAPTURE_CSS` for sticky headers and banners, and `SECTION_SELECTOR`: [docs/before-after.md](docs/before-after.md).
+
 ## Deploy on Railway
 
 The viewer needs a Railway service plus a Railway bucket. The short version:
@@ -96,6 +112,7 @@ railway domain --service media-viewer                # public https URL
 ## Guides
 
 - [Capture with agent-browser](docs/capture-with-agent-browser.md): screenshots, mobile viewports, scripted WebM recordings, and WebM to MP4
+- [Before/after videos](docs/before-after.md): capture two versions of a page, then render a synced side-by-side scroll with captions
 - [T3 Code](docs/t3-code.md): built-in preview and recording tools as an alternative capture path
 - [Instagram specs](docs/instagram.md): Reel, Story, and Feed sizes, safe zones, codecs, cover frames, and exact render commands
 - [Deploy on Railway](docs/deploy-railway.md)
