@@ -1,5 +1,5 @@
 {
-  "brand": "Your Product",
+  "brand": "Acme",
   "accent": "#7c9cff",
   "bg": "#0b0f1a",
   "fg": "#f4f6fb",
@@ -12,7 +12,7 @@
       "eyebrow": "Product tour",
       "caption": "From idea to live in three taps.",
       "durationInFrames": 75,
-      "narration": "Here's how you go from idea to live."
+      "narration": "From idea to live."
     },
     {
       "kind": "shot",
@@ -21,7 +21,7 @@
       "durationInFrames": 90,
       "media": { "type": "demo", "demoVariant": "dashboard" },
       "zoom": { "x": 0.3, "y": 0.6, "from": 1, "to": 1.06 },
-      "narration": "Open the app, and the numbers that matter are right there."
+      "narration": "Your key numbers, right there."
     },
     {
       "kind": "shot",
@@ -30,7 +30,7 @@
       "durationInFrames": 90,
       "media": { "type": "demo", "demoVariant": "list" },
       "zoom": { "x": 0.15, "y": 0.35, "from": 1, "to": 1.1 },
-      "narration": "Your team's work is waiting, exactly where they left it."
+      "narration": "Pick up where your team left off."
     },
     {
       "kind": "shot",
@@ -38,7 +38,7 @@
       "caption": "Publish, and everyone knows instantly.",
       "durationInFrames": 75,
       "media": { "type": "demo", "demoVariant": "success" },
-      "narration": "Hit publish, and everyone knows."
+      "narration": "Publish. Everyone knows."
     },
     {
       "kind": "outro",

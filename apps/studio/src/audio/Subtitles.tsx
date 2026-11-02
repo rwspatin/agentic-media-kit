@@ -8,6 +8,8 @@ import type { Word } from "./schema";
 export type SubtitleSegment = {
   fromFrame: number;
   words: Word[];
+  // "start" lines the words up with left-aligned copy (title cards).
+  align?: "center" | "start";
 };
 
 const MAX_WORDS = 3;
@@ -15,6 +17,17 @@ const MAX_PAGE_MS = 1200;
 const LINGER_MS = 300; // how long the last page stays after its last word
 
 type Page = { words: Word[]; startMs: number; endMs: number };
+
+// A dark contour from a ring of hard shadows plus a soft drop shadow.
+// (-webkit-text-stroke paints over the fill in Chrome's HTML text, which
+// makes the letters look hollow.)
+const outline = (r: number) => {
+  const ring = Array.from({ length: 16 }, (_, i) => {
+    const a = (i / 16) * Math.PI * 2;
+    return `${(Math.cos(a) * r).toFixed(1)}px ${(Math.sin(a) * r).toFixed(1)}px 0 rgba(8, 10, 16, 0.95)`;
+  });
+  return [...ring, `0 ${r}px ${r * 4}px rgba(0, 0, 0, 0.6)`].join(", ");
+};
 
 // TikTok-style pages: at most 3 words / ~1.2 s, and a page never runs past
 // the end of a sentence or clause.
@@ -36,8 +49,10 @@ export const toPages = (words: Word[]): Page[] => {
 };
 
 // Word-synced subtitles of the voiceover, the active word in `accent`.
+// Plain outlined text, no box: a filled pill reads as a button and hides the
+// screen content behind it.
 // Positioned by the caller (absolute `bottom`, `left`, `right` in px);
-// `maxWidth` keeps the pill inside e.g. a phone screen (long words wrap).
+// `maxWidth` keeps the text inside e.g. a phone screen (long words wrap).
 // Renders nothing in stills: there's no narration in a single frame.
 export const Subtitles: React.FC<{
   segments: SubtitleSegment[];
@@ -54,12 +69,14 @@ export const Subtitles: React.FC<{
   if (durationInFrames <= 1) return null;
 
   let page: Page | undefined;
+  let align: SubtitleSegment["align"] = "center";
   let tMs = 0;
   for (const s of segments) {
     const t = ((frame - s.fromFrame) / fps) * 1000;
     const p = toPages(s.words).find((pg) => t >= pg.startMs && t < pg.endMs);
     if (p) {
       page = p;
+      align = s.align ?? "center";
       tMs = t;
       break;
     }
@@ -71,22 +88,30 @@ export const Subtitles: React.FC<{
   const active = page.words.reduce((a, w, i) => (tMs >= w.startMs ? i : a), 0);
 
   return (
-    <div style={{ position: "absolute", left, right, bottom, display: "flex", justifyContent: "center", pointerEvents: "none" }}>
+    <div
+      style={{
+        position: "absolute",
+        left,
+        right,
+        bottom,
+        display: "flex",
+        justifyContent: align === "start" ? "flex-start" : "center",
+        pointerEvents: "none",
+      }}
+    >
       <div
         style={{
           transform: `scale(${pop})`,
+          transformOrigin: align === "start" ? "left center" : "center",
           maxWidth,
-          boxSizing: "border-box",
-          background: "rgba(8, 10, 16, 0.72)",
-          borderRadius: 18 * unit,
-          padding: `${14 * unit}px ${28 * unit}px`,
           fontSize: TYPE.subtitles.text * unit,
-          lineHeight: 1.15,
+          lineHeight: 1.12,
           fontWeight: 800,
           letterSpacing: -0.5 * unit,
-          textAlign: "center",
+          textAlign: align === "start" ? "left" : "center",
           color: fg,
           textWrap: "balance",
+          textShadow: outline(4 * unit),
         }}
       >
         {page.words.map((w, i) => (

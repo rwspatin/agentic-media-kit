@@ -21,7 +21,7 @@ node scripts/check-beats.mjs apps/studio/out/tour.mp4 apps/studio/public/audio/<
 | `caption-rate` | error > 3.0, warn ≥ 2.5 | caption words ÷ beat seconds | people read about 3 words/s on a phone, while also looking at the screen |
 | `caption-length` | error | caption ≤ 90 characters | two lines at the caption size |
 | `eyebrow-length` | error | eyebrow ≤ 24 characters | one short uppercase line |
-| `narration-rate` | warn | narration words ÷ voice seconds ≤ 2.7 | faster sounds rushed; cut words rather than speed up |
+| `narration-rate` | warn | narration words ÷ beat seconds ≤ 2.7 | more words than the beat has room for sounds rushed; cut words or lengthen the beat (the clip's own rate is just the TTS speed) |
 | `voice-fit` | error | 6-frame lead + voice duration ≤ beat | otherwise the voice is cut off at the next beat |
 | `voice-needs-narration` | error | a voice mode has narration on ≥ 1 beat | nothing to speak |
 | `narration-unvoiced` | warn | in a voice mode, every narrated beat has a `voice` | `scripts/audio.mjs` wasn't run (or failed) |

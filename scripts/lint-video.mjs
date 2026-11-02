@@ -30,7 +30,7 @@ const RULES = [
   ["caption-rate", "error", `caption words / beat seconds <= ${CAPTION_WPS_MAX} (warn from ${CAPTION_WPS_WARN})`],
   ["caption-length", "error", `caption <= ${CAPTION_MAX_CHARS} characters`],
   ["eyebrow-length", "error", `eyebrow <= ${EYEBROW_MAX_CHARS} characters`],
-  ["narration-rate", "warn", `narration words / voice seconds <= ${NARRATION_WPS_MAX}`],
+  ["narration-rate", "warn", `narration words / beat seconds <= ${NARRATION_WPS_MAX}`],
   ["voice-fit", "error", `VOICE_LEAD (${VOICE_LEAD} frames) + voice duration fits inside its beat`],
   ["voice-needs-narration", "error", "a voice mode has narration on at least one beat"],
   ["narration-unvoiced", "warn", "in a voice mode, every beat with narration has a generated voice (run scripts/audio.mjs)"],
@@ -84,8 +84,10 @@ beats.forEach((b, i) => {
   if ((b.eyebrow ?? "").length > EYEBROW_MAX_CHARS) add("eyebrow-length", "error", n, `eyebrow is ${b.eyebrow.length} chars (> ${EYEBROW_MAX_CHARS})`);
 
   if (b.voice && voiceMode) {
-    const nps = words(b.narration) / b.voice.durationSec;
-    if (nps > NARRATION_WPS_MAX) add("narration-rate", "warn", n, `narration runs at ${nps.toFixed(2)} words/s (> ${NARRATION_WPS_MAX}): fewer words`);
+    // Against the beat, not the clip: the clip's own rate is the TTS's speaking
+    // speed, which no amount of trimming changes. This is the pace the viewer gets.
+    const nps = words(b.narration) / sec(d);
+    if (nps > NARRATION_WPS_MAX) add("narration-rate", "warn", n, `narration packs ${nps.toFixed(2)} words/s into the beat (> ${NARRATION_WPS_MAX}): fewer words or a longer beat`);
     const need = VOICE_LEAD / fps + b.voice.durationSec;
     if (need > sec(d)) add("voice-fit", "error", n, `voice needs ${need.toFixed(2)} s (lead + clip) but the beat is ${sec(d).toFixed(2)} s`);
   } else if (voiceMode && b.narration?.trim()) {

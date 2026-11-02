@@ -319,6 +319,7 @@ export const ScreenTour: React.FC<ScreenTourProps> = ({
   const subtitleSegments: SubtitleSegment[] = voiced.map(({ beat, start }) => ({
     fromFrame: start + VOICE_LEAD,
     words: beat.voice!.words,
+    align: beat.kind === "shot" ? "center" : "start", // title cards are left-aligned
   }));
 
   const fadeOut =
