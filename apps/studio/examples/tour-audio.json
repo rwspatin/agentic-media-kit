@@ -1,0 +1,51 @@
+{
+  "brand": "Your Product",
+  "accent": "#7c9cff",
+  "bg": "#0b0f1a",
+  "fg": "#f4f6fb",
+  "device": "phone",
+  "url": "app.example.com",
+  "outroSub": "app.example.com",
+  "beats": [
+    {
+      "kind": "intro",
+      "eyebrow": "Product tour",
+      "caption": "From idea to live in three taps.",
+      "durationInFrames": 60,
+      "narration": "Here's how you go from idea to live."
+    },
+    {
+      "kind": "shot",
+      "eyebrow": "Step 01",
+      "caption": "See what matters the moment you open the app.",
+      "durationInFrames": 90,
+      "media": { "type": "demo", "demoVariant": "dashboard" },
+      "zoom": { "x": 0.3, "y": 0.6, "from": 1, "to": 1.06 },
+      "narration": "Open the app, and the numbers that matter are right there."
+    },
+    {
+      "kind": "shot",
+      "eyebrow": "Step 02",
+      "caption": "Pick up exactly where your team left off.",
+      "durationInFrames": 90,
+      "media": { "type": "demo", "demoVariant": "list" },
+      "zoom": { "x": 0.15, "y": 0.35, "from": 1, "to": 1.1 },
+      "narration": "Your team's work is waiting, exactly where they left it."
+    },
+    {
+      "kind": "shot",
+      "eyebrow": "Step 03",
+      "caption": "Publish, and everyone knows instantly.",
+      "durationInFrames": 75,
+      "media": { "type": "demo", "demoVariant": "success" },
+      "narration": "Hit publish, and everyone knows."
+    },
+    {
+      "kind": "outro",
+      "eyebrow": "Get started",
+      "caption": "Your product, in motion.",
+      "durationInFrames": 60,
+      "narration": "Try it today."
+    }
+  ]
+}

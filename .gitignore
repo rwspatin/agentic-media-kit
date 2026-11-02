@@ -11,6 +11,7 @@ out/
 *.mov
 apps/studio/public/captures/
 apps/studio/public/shots/
+apps/studio/public/audio/
 apps/studio/public/before-after/*
 !apps/studio/public/before-after/demo/
 

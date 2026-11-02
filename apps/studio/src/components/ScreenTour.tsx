@@ -11,6 +11,9 @@ import {
   type CalculateMetadataFunction,
 } from "remotion";
 import { z } from "zod";
+import { AudioLayer, type VoiceSegment } from "../audio/AudioLayer";
+import { audioSchema, beatVoiceSchema, flagsFor } from "../audio/schema";
+import { Subtitles, type SubtitleSegment } from "../audio/Subtitles";
 import { safeZoneFor, sans, serif } from "../theme";
 import { DemoScreen } from "./DemoScreen";
 import { BROWSER_BAR, DeviceFrame, PHONE_BEZEL } from "./DeviceFrame";
@@ -46,6 +49,9 @@ const beatSchema = z.object({
   durationInFrames: z.number().int().positive(),
   media: mediaSchema.optional(),
   zoom: zoomSchema.optional(),
+  // Voiceover script for this beat; scripts/audio.mjs turns it into `voice`.
+  narration: z.string().optional(),
+  voice: beatVoiceSchema.optional(),
 });
 
 export const screenTourSchema = z.object({
@@ -58,6 +64,8 @@ export const screenTourSchema = z.object({
   outroSub: z.string(),
   beats: z.array(beatSchema).min(1),
   showSafeZones: z.boolean().optional(),
+  // Optional audio (voiceover, music bed, subtitles). Omit for a silent video.
+  audio: audioSchema.optional(),
 });
 
 export type ScreenTourProps = z.infer<typeof screenTourSchema>;
@@ -71,6 +79,8 @@ export const calculateTourMetadata: CalculateMetadataFunction<ScreenTourProps> =
 
 const CROSSFADE = 12;
 const CAPTION_H_RATIO = 0.12;
+// A beat's voice starts a beat after its visuals so the cut lands first.
+export const VOICE_LEAD = 6;
 
 const withRanges = (beats: Beat[]) => {
   let cursor = 0;
@@ -256,9 +266,10 @@ export const ScreenTour: React.FC<ScreenTourProps> = ({
   outroSub,
   beats,
   showSafeZones,
+  audio,
 }) => {
   const frame = useCurrentFrame();
-  const { width, height, durationInFrames } = useVideoConfig();
+  const { width, height, durationInFrames, fps } = useVideoConfig();
   const zone = safeZoneFor(width, height);
   const unit = width / 1080;
   const ranges = withRanges(beats);
@@ -295,6 +306,19 @@ export const ScreenTour: React.FC<ScreenTourProps> = ({
     ? interpolate(frame, [lastShot.end - CROSSFADE, lastShot.end], [1, 0], { extrapolateLeft: "clamp", extrapolateRight: "clamp" })
     : 0;
   const deviceOpacity = Math.min(deviceIn, deviceOut);
+
+  // --- Audio: voice clips start VOICE_LEAD frames into their beat.
+  const flags = audio ? flagsFor(audio.mode) : { voice: false, music: false, subtitles: false };
+  const voiced = flags.voice ? ranges.filter((r) => r.beat.voice) : [];
+  const voiceSegments: VoiceSegment[] = voiced.map(({ beat, start, end }) => ({
+    fromFrame: start + VOICE_LEAD,
+    src: beat.voice!.src,
+    durationInFrames: Math.max(1, Math.min(Math.ceil(beat.voice!.durationSec * fps), end - start - VOICE_LEAD)),
+  }));
+  const subtitleSegments: SubtitleSegment[] = voiced.map(({ beat, start }) => ({
+    fromFrame: start + VOICE_LEAD,
+    words: beat.voice!.words,
+  }));
 
   const fadeOut =
     durationInFrames > 30
@@ -381,6 +405,24 @@ export const ScreenTour: React.FC<ScreenTourProps> = ({
           </Sequence>
         );
       })}
+
+      {/* Subtitles sit over the lower part of the device area, clear of the caption block. */}
+      {flags.subtitles && subtitleSegments.length > 0 && (
+        <Subtitles
+          segments={subtitleSegments}
+          accent={accent}
+          fg={fg}
+          unit={unit}
+          bottom={height - (areaTop + areaH) + Math.round(48 * unit)}
+          left={zone.left}
+          right={zone.right}
+          maxWidth={device === "none" ? areaW : screenW - Math.round(24 * unit)}
+        />
+      )}
+
+      {audio && (flags.voice || flags.music) && (
+        <AudioLayer voice={voiceSegments} music={flags.music ? audio.music : undefined} voiceVolume={audio.voiceVolume} />
+      )}
 
       {showSafeZones && <SafeZoneOverlay />}
     </AbsoluteFill>

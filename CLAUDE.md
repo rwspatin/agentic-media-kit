@@ -15,11 +15,13 @@ The full pipeline as a skill: `.claude/skills/agentic-media/SKILL.md`.
 | `apps/media-viewer/server.js` | The whole viewer: routes, HTML templates, S3 client, and auth, in one file. Keep it that way, with no client JS and no DB. |
 | `apps/studio/src/Root.tsx` | Composition registry and default props |
 | `apps/studio/src/components/` | `Promo` (typographic), `ScreenTour` (device mockup + captions), `DemoScreen` (generated placeholder UI), `DeviceFrame`, `shared` |
+| `apps/studio/src/audio/` | Audio modes for any composition: `schema` (zod + `flagsFor(mode)`), `AudioLayer` (voice clips + ducked music bed), `Subtitles` (word-synced). Wired into `ScreenTour` via the optional `audio` prop. See `docs/audio.md`. |
+| `apps/studio/examples/` | Example props files (`tour-audio.json`: a narrated tour on demo media). |
 | `apps/studio/src/before-after/` | `BeforeAfter`: two versions of a page scrolled in sync with captions, a phone scene, a checklist, and an outro. Assets come from `scripts/capture-before-after.sh`. Demo pages live in `apps/studio/before-after-demo/`. |
 | `apps/studio/src/launch/` | The kit's launch video (terminal scene in React, real captures, jump cuts, cross-dissolves). Copy it as a starting point. |
 | `apps/studio/src/theme.ts` | Fonts, brand defaults, Instagram safe zones |
-| `apps/studio/public/` | Capture assets (`captures/`, `shots/`), gitignored. `launch/` is the exception: small public footage for the launch example. |
-| `scripts/` | `capture-flow.sh`, `capture-before-after.sh` (+ `lib/tile-captures.mjs`), `webm-to-mp4.sh`, `upload.sh` |
+| `apps/studio/public/` | Capture and audio assets (`captures/`, `shots/`, `audio/`), gitignored. `launch/` is the exception: small public footage for the launch example. |
+| `scripts/` | `capture-flow.sh`, `capture-before-after.sh` (+ `lib/tile-captures.mjs`), `audio.mjs` (voiceover + music + props for audio modes), `webm-to-mp4.sh`, `upload.sh` |
 | `docs/` | Detailed guides. Read the relevant one before improvising. |
 
 ## Commands
@@ -35,6 +37,10 @@ npx tsc --noEmit
 npx remotion still Reel-Cover out/cover.png
 npx remotion render Tour-Reel out/tour.mp4 --props=./tour.json --codec=h264 --pixel-format=yuv420p --audio-codec=aac
 npx remotion render Tour-Reel out/preview.mp4 --scale=0.5 --frames=0-89     # quick iteration
+
+# Audio (from repo root): voice per beat + music bed → ready-to-render props
+node scripts/audio.mjs apps/studio/examples/tour-audio.json /tmp/tour-voiced.json --name demo --mode auto --goal "onboarding tutorial" --tts gemini
+node scripts/audio.mjs ... --tts say --music synth     # offline draft, no keys
 
 # Normalize + publish (from repo root; needs MEDIA_VIEWER_URL + UPLOAD_TOKEN)
 scripts/webm-to-mp4.sh apps/studio/out/tour.mp4 apps/studio/out/tour-ig.mp4
@@ -58,6 +64,7 @@ Compositions: `Promo-Reel`, `Promo-Feed`, `Promo-Square` (video), `Promo-Still`,
 - **Remotion outputs `yuvj420p`.** Run `scripts/webm-to-mp4.sh` on renders before publishing to Instagram.
 - **Safe zones.** Keep text out of the Instagram UI overlay (`safeZoneFor()` in `theme.ts`). Preview it with `"showSafeZones": true` and **turn it off** before the final render.
 - **Fonts load from Google Fonts at render time**, which needs outbound HTTPS.
+- **Audio assets are gitignored** (`public/audio/<slug>/`). A props file with `audio` fails to render on a machine that hasn't run `scripts/audio.mjs`. Gemini TTS word timings are estimated; use ElevenLabs for exact subtitle sync.
 - **Uploads are buffered in memory** by the viewer (`MAX_UPLOAD_MB`, default 1024).
 - **`PUBLIC_READ=true`** makes browsing (`/`, `/p/:project`, media URLs) public; uploads still need the cookie or bearer token. Everything in that bucket is then world-readable, so never publish private captures to a public viewer.
 - **Project slugs** are lowercased and sanitized to `[a-z0-9-]`. Files at the bucket root appear under `UNSORTED_PROJECT` (default `unsorted`).
