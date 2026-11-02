@@ -15,8 +15,8 @@ Ask only if it's truly ambiguous. Otherwise infer:
 |---|---|
 | "check / validate the UI", "screenshot it" | 1 (+ look at the images) |
 | "make a reel / promo / post" with no app to capture | 2 (Promo-* or Tour with demo media) → 3 |
-| "with voiceover / music / subtitles", "narrated tutorial" | … → 2 → 2a → 3 |
-| "record the flow and make a reel", "product tour" | 1 → 2 → 3 |
+| "with voiceover / music / subtitles", "narrated tutorial" | … → 2 → 2a → 2b → 3 |
+| "record the flow and make a reel", "product tour" | 1 → 2 → 2b → 3 |
 | "before/after video", "show the redesign" | 1 (`capture-before-after.sh`) → 2 (`BeforeAfter-*`) → 3 |
 | "upload this file" | 3 |
 
@@ -90,11 +90,22 @@ Rules:
    ```bash
    cd "$KIT"
    node scripts/audio.mjs ./tour.json ./tour-voiced.json --name <slug> --mode <mode|auto> --goal "<goal>" \
-     --tts gemini --music synth          # --tts say for an offline draft; elevenlabs for exact word sync
+     --tts gemini                        # --tts say for an offline draft; elevenlabs for exact word sync
    ```
-4. **Verify**: `ffprobe` shows an audio stream; `ffmpeg -i out.mp4 -af ebur128 -f null -` reports loudness; open a frame mid-narration and confirm the subtitles are drawn and readable. Report the provider/model used and anything that fell back (quota, `synth` instead of `lyria`).
+   The music defaults to a procedural score (mood from the goal; `--mood calm|tech|upbeat|warm`, `--bpm`) and the beats are snapped to its tempo so cuts land on the beat.
+4. **Verify**: `ffprobe` shows an audio stream; `ffmpeg -i out.mp4 -af ebur128 -f null -` reports loudness; `node scripts/check-beats.mjs <render> <timeline.json>` (path printed by the script) passes; open a frame mid-narration and confirm the subtitles are drawn and readable. Report the provider/model used and anything that fell back (quota, `synth` instead of `procedural`/`lyria`).
 
 Needs `GEMINI_API_KEY` (or `ELEVENLABS_API_KEY` + voice id) for real voices. Never publish `say` voices or CC-BY-NC model output commercially.
+
+## 2b. Clean-context review (before publishing)
+
+```bash
+cd "$KIT"
+node scripts/lint-video.mjs ./tour.json --composition Tour-Reel          # fix every error
+node scripts/contact-sheet.mjs apps/studio/out/tour.mp4 /tmp/tour-sheet.png --at-cuts ./tour.json
+```
+
+Then spawn a **fresh subagent with an explicit model tier** (e.g. a Sonnet-tier agent; never inherit the default). Give it only the contact sheet path, the props JSON path, the rules (`node scripts/lint-video.mjs --rules` + the lint output) and the goal in one sentence: not this conversation. It returns PASS/FAIL with concrete issues per beat. On FAIL, fix, re-render, and review again with a new subagent. Prompt and checklist: `docs/review.md`.
 
 ## 3. Publish (media-viewer)
 
