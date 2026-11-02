@@ -8,7 +8,15 @@
 //       --mode <captions|voice|voice+captions|music+captions|music+voice|music+voice+captions|auto>
 //       [--goal "<free text>"] [--placement reel|feed|landscape|story]
 //       [--tts gemini|elevenlabs|say] [--voice <name>] [--style "<delivery direction>"] [--fps 30]
-//       [--music synth|lyria|elevenlabs|<path to audio file>] [--music-prompt "<text>"]
+//       [--music procedural|synth|lyria|elevenlabs|<path to audio file>] [--music-prompt "<text>"]
+//       [--mood calm|tech|upbeat|warm] [--bpm <n>] [--key <tonic>] [--no-beat-sync] [--no-lint]
+//
+// --music procedural (default) renders a score with scripts/score/make_score.py
+// (python3, stdlib only) and snaps every beat's length up to whole musical
+// beats so cuts land on the beat (--no-beat-sync to keep the lengths). The
+// timeline it scores from is written to <asset dir>/timeline.json; check the
+// render with scripts/check-beats.mjs. At the end the output props are linted
+// (scripts/lint-video.mjs, non-fatal).
 //
 // Assets land in apps/studio/public/audio/<slug>/ (gitignored). Voice clips
 // are cached by sha1(provider|model|voice|style|text) in manifest.json, so
@@ -24,6 +32,7 @@ const PUBLIC = join(ROOT, "apps/studio/public");
 const MODES = ["captions", "voice", "voice+captions", "music+captions", "music+voice", "music+voice+captions"];
 const VOICE_LEAD = 6; // frames; keep in sync with ScreenTour.tsx
 const VOICE_TAIL = 0.45; // seconds of air after the voice before the next beat
+const MUSIC_VOLUME_SCORE = 0.12; // linear; the synth bed and files use 0.18 (schema default)
 const GEMINI_TTS_MODELS = ["gemini-3.8-flash-tts", "gemini-3.1-flash-tts-preview", "gemini-2.5-flash-preview-tts"];
 
 const log = (...a) => console.error(...a);
@@ -33,6 +42,7 @@ const die = (msg) => {
 };
 
 // --- Args ---------------------------------------------------------------
+const FLAGS = ["no-beat-sync", "no-lint"]; // boolean options, no value
 const parseArgs = (argv) => {
   const pos = [];
   const opts = {};
@@ -40,6 +50,10 @@ const parseArgs = (argv) => {
     const a = argv[i];
     if (a.startsWith("--")) {
       const key = a.slice(2);
+      if (FLAGS.includes(key)) {
+        opts[key] = true;
+        continue;
+      }
       const next = argv[i + 1];
       if (next === undefined || next.startsWith("--")) die(`missing value for --${key}`);
       opts[key] = next;
@@ -57,7 +71,7 @@ if (!inPath || !outPath || !opts.name || !opts.mode) {
 const slug = opts.name.toLowerCase().replace(/[^a-z0-9-]+/g, "-").replace(/^-+|-+$/g, "");
 const fps = Number(opts.fps ?? 30);
 const tts = opts.tts ?? "gemini";
-const musicSource = opts.music ?? "synth";
+let musicSource = opts.music ?? "procedural";
 const placement = opts.placement ?? "reel";
 if (!["gemini", "elevenlabs", "say"].includes(tts)) die(`unknown --tts ${tts}`);
 if (!["reel", "feed", "landscape", "story"].includes(placement)) die(`unknown --placement ${placement}`);
@@ -112,6 +126,41 @@ const wantVoice = mode.includes("voice");
 const wantMusic = mode.startsWith("music");
 if (wantVoice && !hasNarration) {
   die(`mode "${mode}" needs a voiceover, but no beat has "narration". Write a short "narration" string per beat (~2.5 words/sec, no longer than the beat) in ${inPath}, then re-run.`);
+}
+
+// --- Score mood (procedural music) ---------------------------------------
+const SCORE_DIR = join(ROOT, "scripts/score");
+const MOODS = Object.fromEntries(Object.entries(JSON.parse(readFileSync(join(SCORE_DIR, "moods.json"), "utf8"))).filter(([k]) => !k.startsWith("_")));
+const MOOD_RULES = [
+  [/\bads?\b|an[uú]ncio|promo|teaser|launch|lan[cç]amento|hype|campanha|campaign/i, "upbeat"],
+  [/tutorial|how[- ]?to|explain|explica|passo a passo|\bdemo\b|feature/i, "tech"],
+  [/onboarding|walkthrough|\btour\b|welcome|boas[- ]vindas/i, "calm"],
+  [/testimonial|depoimento|founder|fundador|\bstory\b|hist[oó]ria|bastidores|behind the scenes/i, "warm"],
+];
+const pickMood = () => {
+  if (opts.mood) return { mood: opts.mood, reason: "--mood" };
+  const goal = opts.goal ?? "";
+  for (const [re, mood] of MOOD_RULES) {
+    const m = goal.match(re);
+    if (m) return { mood, reason: `goal matches "${m[0]}"` };
+  }
+  return { mood: "calm", reason: "default" };
+};
+
+let score = null; // { mood, bpm, key } when the procedural score is used
+if (wantMusic && musicSource === "procedural") {
+  const python = spawnSync("python3", ["--version"], { encoding: "utf8" });
+  if (python.status !== 0) {
+    log("warning: --music procedural needs python3 (stdlib only), which wasn't found; falling back to the synth bed");
+    musicSource = "synth";
+  } else {
+    const { mood, reason } = pickMood();
+    if (!MOODS[mood]) die(`unknown --mood ${mood} (one of: ${Object.keys(MOODS).join(", ")})`);
+    const bpm = Number(opts.bpm ?? MOODS[mood].bpm);
+    if (!(bpm >= 40 && bpm <= 200)) die(`--bpm ${opts.bpm}: expected 40-200`);
+    score = { mood, bpm, key: opts.key ?? MOODS[mood].key };
+    log(`score: ${mood} (${reason}), ${bpm} bpm in ${score.key}`);
+  }
 }
 
 const assetDir = join(PUBLIC, "audio", slug);
@@ -397,7 +446,36 @@ const musicElevenLabs = async (seconds) => {
   return out;
 };
 
-const makeMusic = async (seconds) => {
+// Procedural score: scripts/score/make_score.py renders a mastered WAV
+// (-14 LUFS, <= -1 dBTP) from the timeline. Cached by the timeline and the
+// score sources, so re-running with unchanged beats is instant.
+const musicProcedural = (timeline) => {
+  const timelinePath = join(assetDir, "timeline.json");
+  writeFileSync(timelinePath, JSON.stringify(timeline, null, 2) + "\n");
+  const out = join(assetDir, "music.wav");
+  const h = createHash("sha1").update(JSON.stringify(timeline));
+  for (const f of ["make_score.py", "moods.json", "synth.py", "dsp.py", "mix.py", "loudness.py"]) h.update(readFileSync(join(SCORE_DIR, f)));
+  const hash = h.digest("hex");
+  if (manifest.music?.hash === hash && existsSync(out)) {
+    log("  cached");
+    return out;
+  }
+  const r = spawnSync("python3", [join(SCORE_DIR, "make_score.py"), "--timeline", timelinePath, "--out", out], { encoding: "utf8" });
+  if (r.status !== 0) throw new Error((r.stderr || r.stdout || "make_score.py failed").trim().split("\n").slice(-3).join(" "));
+  log(`  ${r.stdout.trim()}`);
+  manifest.music = { hash, mood: timeline.mood, bpm: timeline.bpm };
+  return out;
+};
+
+const makeMusic = async (seconds, timeline) => {
+  if (musicSource === "procedural") {
+    try {
+      return musicProcedural(timeline);
+    } catch (e) {
+      log(`warning: --music procedural failed (${e.message.slice(0, 300)}); falling back to the synth bed`);
+      return musicSynth(seconds);
+    }
+  }
   if (musicSource === "synth") return musicSynth(seconds);
   if (musicSource === "lyria" || musicSource === "elevenlabs") {
     try {
@@ -407,7 +485,7 @@ const makeMusic = async (seconds) => {
       return musicSynth(seconds);
     }
   }
-  if (!existsSync(musicSource)) die(`--music: not synth|lyria|elevenlabs and no such file: ${musicSource}`);
+  if (!existsSync(musicSource)) die(`--music: not procedural|synth|lyria|elevenlabs and no such file: ${musicSource}`);
   const out = join(assetDir, `music${extname(musicSource) || ".mp3"}`);
   copyFileSync(musicSource, out);
   return out;
@@ -423,7 +501,23 @@ if (wantVoice) {
     const need = Math.ceil((VOICE_LEAD / fps + beat.voice.durationSec + VOICE_TAIL) * fps);
     beat.durationInFrames = Math.max(beat.durationInFrames, need);
   }
-  writeFileSync(manifestPath, JSON.stringify(manifest, null, 2) + "\n");
+}
+
+// Beat sync: snap each beat UP to a whole number of musical beats. Cut times
+// are kept in beats and rounded to frames once (frame = round(beats * fps *
+// 60 / bpm)), so rounding never accumulates into drift.
+const rawFrames = beats.map((b) => b.durationInFrames);
+const beatSync = Boolean(score) && !opts["no-beat-sync"];
+if (beatSync) {
+  const framesPerBeat = (fps * 60) / score.bpm;
+  let beatsSoFar = 0;
+  let prevCut = 0;
+  for (const b of beats) {
+    beatsSoFar += Math.max(1, Math.ceil(b.durationInFrames / framesPerBeat - 1e-9));
+    const cut = Math.round(beatsSoFar * framesPerBeat);
+    b.durationInFrames = cut - prevCut;
+    prevCut = cut;
+  }
 }
 
 const totalFrames = beats.reduce((s, b) => s + b.durationInFrames, 0);
@@ -431,22 +525,53 @@ const totalSec = totalFrames / fps;
 const audio = { mode };
 if (wantMusic) {
   log(`music (${musicSource}): ${totalSec.toFixed(1)} s`);
-  const file = await makeMusic(totalSec);
-  audio.music = { src: rel(file), volume: 0.18, duckTo: 0.35 };
+  let timeline;
+  if (score) {
+    const cuts = [];
+    const voice = [];
+    let cursor = 0;
+    for (const b of beats) {
+      if (wantVoice && b.voice) {
+        const startSec = (cursor + VOICE_LEAD) / fps;
+        voice.push({ startSec: +startSec.toFixed(3), endSec: +(startSec + b.voice.durationSec).toFixed(3) });
+      }
+      cursor += b.durationInFrames;
+      if (cursor < totalFrames) cuts.push(+(cursor / fps).toFixed(4));
+    }
+    timeline = { ...score, fps, durationSec: +totalSec.toFixed(4), beatSync, cuts, voice };
+  }
+  const file = await makeMusic(totalSec, timeline);
+  // A mastered score (-14 LUFS) is ~4 dB louder than the synth bed (-18), so
+  // it plays a little lower to keep the same balance under the voice.
+  audio.music = { src: rel(file), volume: musicSource === "procedural" ? MUSIC_VOLUME_SCORE : 0.18, duckTo: 0.35 };
 }
+writeFileSync(manifestPath, JSON.stringify(manifest, null, 2) + "\n");
 
 writeFileSync(outPath, JSON.stringify({ ...props, beats, audio }, null, 2) + "\n");
 
 // Summary + the exact render command.
 log("");
-log("beat  kind    voice s  frames");
+log(`beat  kind    voice s  frames${beatSync ? "  (before sync)" : ""}`);
 beats.forEach((b, i) => {
   const v = b.voice && wantVoice ? b.voice.durationSec.toFixed(2).padStart(7) : "      –";
-  log(`${String(i + 1).padStart(4)}  ${b.kind.padEnd(6)}  ${v}  ${String(b.durationInFrames).padStart(6)}`);
+  const was = beatSync ? `  (${rawFrames[i]})` : "";
+  log(`${String(i + 1).padStart(4)}  ${b.kind.padEnd(6)}  ${v}  ${String(b.durationInFrames).padStart(6)}${was}`);
 });
-log(`total ${totalFrames} frames = ${totalSec.toFixed(1)} s @ ${fps} fps`);
+log(`total ${totalFrames} frames = ${totalSec.toFixed(1)} s @ ${fps} fps${beatSync ? `, cuts on the beat at ${score.bpm} bpm` : ""}`);
 const comp = ["feed", "landscape"].includes(placement) ? "Tour-Feed" : "Tour-Reel";
 log("");
 log("render:");
 log(`  cd apps/studio && npx remotion render ${comp} out/${slug}.mp4 --props=${resolve(outPath)} --codec=h264 --pixel-format=yuv420p --audio-codec=aac`);
+if (score && musicSource === "procedural") {
+  log("check the cuts against the music after rendering:");
+  log(`  node scripts/check-beats.mjs apps/studio/out/${slug}.mp4 ${join(assetDir, "timeline.json")}`);
+}
+
+if (!opts["no-lint"]) {
+  log("");
+  log("lint:");
+  spawnSync(process.execPath, [join(ROOT, "scripts/lint-video.mjs"), resolve(outPath), "--composition", comp, "--fps", String(fps)], {
+    stdio: ["ignore", 2, 2],
+  });
+}
 console.log(resolve(outPath));

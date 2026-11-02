@@ -1,5 +1,6 @@
 import React from "react";
 import { interpolate, useCurrentFrame, useVideoConfig } from "remotion";
+import TYPE from "../type-scale.json";
 import type { Word } from "./schema";
 
 // Narration words placed on the timeline: the clip starts at `fromFrame`,
@@ -79,7 +80,7 @@ export const Subtitles: React.FC<{
           background: "rgba(8, 10, 16, 0.72)",
           borderRadius: 18 * unit,
           padding: `${14 * unit}px ${28 * unit}px`,
-          fontSize: 64 * unit,
+          fontSize: TYPE.subtitles.text * unit,
           lineHeight: 1.15,
           fontWeight: 800,
           letterSpacing: -0.5 * unit,

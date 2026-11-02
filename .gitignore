@@ -24,3 +24,6 @@ apps/studio/public/before-after/*
 # Launch example footage: public content, small, committed on purpose
 !apps/studio/public/launch/
 !apps/studio/public/launch/*.mp4
+
+# Python bytecode (scripts/score)
+__pycache__/

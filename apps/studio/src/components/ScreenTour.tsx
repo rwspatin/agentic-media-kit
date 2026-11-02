@@ -15,6 +15,7 @@ import { AudioLayer, type VoiceSegment } from "../audio/AudioLayer";
 import { audioSchema, beatVoiceSchema, flagsFor } from "../audio/schema";
 import { Subtitles, type SubtitleSegment } from "../audio/Subtitles";
 import { safeZoneFor, sans, serif } from "../theme";
+import TYPE from "../type-scale.json";
 import { DemoScreen } from "./DemoScreen";
 import { BROWSER_BAR, DeviceFrame, PHONE_BEZEL } from "./DeviceFrame";
 import { Backdrop, SafeZoneOverlay, useEnter } from "./shared";
@@ -184,7 +185,7 @@ const Caption: React.FC<{
       </div>
       <div
         style={{
-          fontSize: 22 * unit,
+          fontSize: TYPE.tour.stepEyebrow * unit,
           letterSpacing: 3 * unit,
           textTransform: "uppercase",
           color: accent,
@@ -197,7 +198,7 @@ const Caption: React.FC<{
       <div
         style={{
           fontFamily: serif,
-          fontSize: 50 * unit,
+          fontSize: TYPE.tour.stepCaption * unit,
           lineHeight: 1.12,
           fontWeight: 500,
           letterSpacing: -0.5 * unit,
@@ -225,7 +226,7 @@ const TitleCard: React.FC<{
     <div>
       <div
         style={{
-          fontSize: 24 * unit,
+          fontSize: TYPE.tour.titleBrand * unit,
           letterSpacing: 5 * unit,
           textTransform: "uppercase",
           color: accent,
@@ -239,7 +240,7 @@ const TitleCard: React.FC<{
       <div
         style={{
           fontFamily: serif,
-          fontSize: 88 * unit,
+          fontSize: TYPE.tour.titleHeadline * unit,
           lineHeight: 1.05,
           fontWeight: 600,
           letterSpacing: -1.5 * unit,
@@ -250,7 +251,7 @@ const TitleCard: React.FC<{
       >
         {caption}
       </div>
-      {sub && <div style={{ fontSize: 30 * unit, color: `${fg}99`, marginTop: 30 * unit, opacity: e2 }}>{sub}</div>}
+      {sub && <div style={{ fontSize: TYPE.tour.titleSub * unit, color: `${fg}99`, marginTop: 30 * unit, opacity: e2 }}>{sub}</div>}
       <div style={{ width: interpolate(e2, [0, 1], [0, 96]) * unit, height: 4 * unit, background: accent, marginTop: 36 * unit, borderRadius: 2 }} />
     </div>
   );
