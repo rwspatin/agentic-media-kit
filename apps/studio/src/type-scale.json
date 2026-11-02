@@ -2,9 +2,9 @@
   "_comment": "Overlay font sizes in px on a 1080-wide canvas (multiplied by width/1080 at render). Read by ScreenTour, Subtitles and scripts/lint-video.mjs (rule font-min). The screen content (DemoScreen, captures) is not covered.",
   "minPx": 28,
   "tour": {
-    "stepEyebrow": 22,
+    "stepEyebrow": 28,
     "stepCaption": 50,
-    "titleBrand": 24,
+    "titleBrand": 28,
     "titleHeadline": 88,
     "titleSub": 30
   },
