@@ -43,12 +43,12 @@ if (propsPath) {
   picks = props.beats.map((b, i) => {
     const t = (cursor + b.durationInFrames / 2) / fps;
     cursor += b.durationInFrames;
-    return { t, label: `#${i + 1} ${t.toFixed(2)}S` };
+    return { t, label: `#${i + 1} ${t.toFixed(2)}s` };
   });
 } else {
   const step = every ? Number(every) : duration / 12;
   picks = [];
-  for (let t = step / 2; t < duration; t += step) picks.push({ t, label: `${t.toFixed(2)}S` });
+  for (let t = step / 2; t < duration; t += step) picks.push({ t, label: `${t.toFixed(2)}s` });
 }
 // ffmpeg returns no frame for a seek this close to the end, so keep 50 ms off it.
 picks = picks.map((p) => ({ ...p, t: Math.min(Math.max(0, p.t), duration - 0.05) }));
@@ -88,7 +88,7 @@ const GLYPHS = {
   9: "01110 10001 10001 01111 00001 00010 01100",
   ".": "00000 00000 00000 00000 00000 01100 01100",
   "#": "01010 01010 11111 01010 11111 01010 01010",
-  S: "01111 10000 10000 01110 00001 00001 11110",
+  s: "00000 00000 01111 10000 01110 00001 11110",
   " ": "00000 00000 00000 00000 00000 00000 00000",
 };
 const drawLabel = (img, text, s) => {

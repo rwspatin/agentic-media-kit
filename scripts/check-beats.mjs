@@ -32,7 +32,17 @@ const SR = 24000;
 const raw = execFileSync("ffmpeg", ["-v", "error", "-i", input, "-vn", "-ac", "1", "-af", "highpass=f=1800,highpass=f=1800", "-ar", String(SR), "-f", "f32le", "-"], {
   maxBuffer: 1 << 30,
 });
-const pcm = new Float32Array(raw.buffer, raw.byteOffset, Math.floor(raw.length / 4));
+// A raw Remotion MP4 decodes with 2048 samples (48 kHz) of AAC priming in
+// front (see scripts/webm-to-mp4.sh, which trims it for publishing). Skip it
+// here too so a raw render and its -ig.mp4 measure the same.
+let comment = "";
+try {
+  comment = execFileSync("ffprobe", ["-v", "error", "-show_entries", "format_tags=comment", "-of", "csv=p=0", input], { encoding: "utf8" });
+} catch {}
+const priming = /^Made with Remotion [\d.]+\s*$/.test(comment) && /\.(mp4|mov|m4v)$/i.test(input) ? Number(process.env.AAC_PRIMING_SAMPLES ?? 2048) : 0;
+const skip = Math.round((priming * SR) / 48000);
+const pcm = new Float32Array(raw.buffer, raw.byteOffset, Math.floor(raw.length / 4)).subarray(skip);
+if (priming) console.log(`note: raw Remotion render, skipping ${priming} samples of AAC priming (${((priming / 48000) * 1000).toFixed(1)} ms)`);
 if (pcm.length === 0) {
   console.error(`${input}: no audio stream`);
   process.exit(2);
