@@ -105,7 +105,7 @@ node scripts/lint-video.mjs ./tour.json --composition Tour-Reel          # fix e
 node scripts/contact-sheet.mjs apps/studio/out/tour.mp4 /tmp/tour-sheet.png --at-cuts ./tour.json
 ```
 
-Then spawn a **fresh subagent with an explicit model tier** (e.g. a Sonnet-tier agent; never inherit the default). Give it only the contact sheet path, the props JSON path, the rules (`node scripts/lint-video.mjs --rules` + the lint output) and the goal in one sentence: not this conversation. It returns PASS/FAIL with concrete issues per beat. On FAIL, fix, re-render, and review again with a new subagent. Prompt and checklist: `docs/review.md`.
+Then spawn a **fresh subagent with an explicit model tier** (e.g. a Sonnet-tier agent; never inherit the default). Give it only the contact sheet path, the props JSON path, the rules (`node scripts/lint-video.mjs --rules` + the lint output) and the goal in one sentence: not this conversation. Tell it subtitles over the device screen are intentional. It returns PASS/FAIL with concrete issues per beat. On FAIL, fix, re-render, and review again with a new subagent. Prompt and checklist: `docs/review.md`.
 
 ## 3. Publish (media-viewer)
 

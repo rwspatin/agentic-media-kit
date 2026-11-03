@@ -22,7 +22,7 @@ cd ../.. && node scripts/check-beats.mjs apps/studio/out/demo.mp4 apps/studio/pu
 | `music+voice` | yes | yes | – |
 | `music+voice+captions` | yes | yes | yes |
 
-The beat headlines (eyebrow + caption) always render. In the voice modes, "captions" adds a subtitle track of the narration over the lower part of the device. In the non-voice modes, the beat headlines *are* the captions.
+The beat headlines (eyebrow + caption) always render. In the voice modes, "captions" adds a subtitle track of the narration over the lower part of the device screen, as outlined text with no box (the TikTok/Reels convention; a filled pill read as a button). On title cards it lines up with the left-aligned copy. In the non-voice modes, the beat headlines *are* the captions.
 
 ## Which mode
 

@@ -63,4 +63,6 @@ Check: captions readable and inside the frame, nothing cropped or blank, device 
 the capture, one idea per beat, the story serves the goal, the outro says what to do next.
 ```
 
+Settled decisions, not issues: word-synced subtitles sit over the lower part of the device screen, as outlined text (the TikTok/Reels convention; chosen over placing them outside the device). Tell the reviewer so it doesn't flag them as UI; it should still flag them if they cover the thing the beat is about.
+
 On FAIL: fix the props (or the capture), re-render, re-run lint + sheet, and review again with a new fresh subagent. Two rounds is usually enough; if the same issue survives twice, tell the human instead of looping.
