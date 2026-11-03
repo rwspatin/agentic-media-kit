@@ -31,7 +31,7 @@ Everything is scriptable and has no GUI dependencies, so it runs on a remote dev
 |---|---|
 | [`apps/media-viewer`](apps/media-viewer) | A single-file Express app with no client JS. It lists projects (bucket prefixes) and plays videos and images from presigned URLs. Download buttons force a real file save. Humans log in with a password cookie; agents upload with `Authorization: Bearer`. Optional `PUBLIC_READ=true` turns it into a public read-only gallery. It has `/healthz` and ships with a Dockerfile and `railway.json`. |
 | [`apps/studio`](apps/studio) | A Remotion 4 template with zod-typed props. Compositions: `Promo-Reel` (1080×1920), `Promo-Feed` (1080×1350), `Promo-Square` (1080×1080), `Promo-Still`, `Reel-Cover`, `Square-Still`, `Tour-Reel` / `Tour-Feed`, and `BeforeAfter-Landscape` / `BeforeAfter-Feed`. The tour frames screenshots or screen recordings in a phone or browser mockup with step captions. The before/after scrolls two versions of a page side by side. A generated demo UI and a bundled demo page mean everything renders with zero setup. |
-| [`scripts/`](scripts) | `capture-flow.sh` records a scripted flow with agent-browser. `capture-before-after.sh` takes full-page captures of two versions of a page for the before/after video. `webm-to-mp4.sh` turns any video into an Instagram-safe MP4. `upload.sh` publishes to the viewer. |
+| [`scripts/`](scripts) | `capture-flow.sh` records a scripted flow with agent-browser. `capture-before-after.sh` takes full-page captures of two versions of a page for the before/after video. `audio.mjs` adds a voiceover, a music bed, and word-synced subtitles to a tour (six audio modes, [docs/audio.md](docs/audio.md)); by default the music is a procedural score with the cuts snapped to its beat. `lint-video.mjs`, `contact-sheet.mjs` and `check-beats.mjs` check a render before a human sees it ([docs/review.md](docs/review.md)). `webm-to-mp4.sh` turns any video into an Instagram-safe MP4 at -14 LUFS. `upload.sh` publishes to the viewer. |
 | [`.claude/skills/agentic-media`](.claude/skills/agentic-media/SKILL.md) | A Claude Code skill that runs the whole pipeline. |
 | [`docs/`](docs) | Capture, T3 Code, Instagram specs, Railway deploy, remote workflow. |
 | [`CLAUDE.md`](CLAUDE.md) / [`AGENTS.md`](AGENTS.md) | The operating guide agents read first. |
@@ -113,6 +113,8 @@ railway domain --service media-viewer                # public https URL
 
 - [Capture with agent-browser](docs/capture-with-agent-browser.md): screenshots, mobile viewports, scripted WebM recordings, and WebM to MP4
 - [Before/after videos](docs/before-after.md): capture two versions of a page, then render a synced side-by-side scroll with captions
+- [Audio](docs/audio.md): voiceover (Gemini, ElevenLabs, or macOS `say`), music bed, word-synced subtitles, and which mode fits which goal
+- [Review](docs/review.md): composition lint rules, contact sheets, and the clean-context review step
 - [T3 Code](docs/t3-code.md): built-in preview and recording tools as an alternative capture path
 - [Instagram specs](docs/instagram.md): Reel, Story, and Feed sizes, safe zones, codecs, cover frames, and exact render commands
 - [Deploy on Railway](docs/deploy-railway.md)

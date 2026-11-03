@@ -11,6 +11,7 @@ out/
 *.mov
 apps/studio/public/captures/
 apps/studio/public/shots/
+apps/studio/public/audio/
 apps/studio/public/before-after/*
 !apps/studio/public/before-after/demo/
 
@@ -23,3 +24,6 @@ apps/studio/public/before-after/*
 # Launch example footage: public content, small, committed on purpose
 !apps/studio/public/launch/
 !apps/studio/public/launch/*.mp4
+
+# Python bytecode (scripts/score)
+__pycache__/
