@@ -5,6 +5,8 @@ import { ScreenTour, calculateTourMetadata, screenTourSchema, type ScreenTourPro
 import { DEFAULT_BRAND } from "./theme";
 import { Launch, LaunchCover, launchSchema, type LaunchProps } from "./launch/Launch";
 import { LAUNCH_DURATION } from "./launch/theme";
+import { Release, ReleaseCover, calculateReleaseMetadata, releaseSchema, type ReleaseProps } from "./release/Release";
+import releaseExample from "../examples/release.json";
 import { BeforeAfter, beforeAfterSchema, calculateBeforeAfterMetadata, type BeforeAfterProps } from "./before-after/BeforeAfter";
 
 // Instagram-native canvases. All 30fps; keep Reels <= 90s (2700 frames).
@@ -73,6 +75,11 @@ const launchDefaults: LaunchProps = {
   downloadPoint: { x: 0.79, y: 0.83 },
   showSafeZones: false,
 };
+
+// "Now with sound": the release video for the audio modes (src/release/).
+// Defaults are examples/release.json, silent (no `audio`), so it renders out of
+// the box; scripts/audio.mjs adds the voice, score and subtitles.
+const releaseDefaults = releaseSchema.parse(releaseExample) satisfies ReleaseProps;
 
 // Before/after of a page redesign. The defaults describe the bundled demo
 // (apps/studio/before-after-demo/, captured into public/before-after/demo/).
@@ -178,6 +185,12 @@ export const RemotionRoot: React.FC = () => (
       <Composition id="Launch-Reel" component={Launch} schema={launchSchema} defaultProps={launchDefaults} durationInFrames={LAUNCH_DURATION} {...REEL} />
       <Composition id="Launch-Feed" component={Launch} schema={launchSchema} defaultProps={launchDefaults} durationInFrames={LAUNCH_DURATION} {...FEED} />
       <Still id="Launch-Cover" component={LaunchCover} schema={launchSchema} defaultProps={launchDefaults} width={REEL.width} height={REEL.height} />
+    </Folder>
+
+    <Folder name="Release">
+      <Composition id="Release-Feed" component={Release} schema={releaseSchema} defaultProps={releaseDefaults} calculateMetadata={calculateReleaseMetadata} durationInFrames={900} {...FEED} />
+      <Composition id="Release-Reel" component={Release} schema={releaseSchema} defaultProps={releaseDefaults} calculateMetadata={calculateReleaseMetadata} durationInFrames={900} {...REEL} />
+      <Still id="Release-Cover" component={ReleaseCover} schema={releaseSchema} defaultProps={releaseDefaults} width={FEED.width} height={FEED.height} />
     </Folder>
 
     <Folder name="BeforeAfter">

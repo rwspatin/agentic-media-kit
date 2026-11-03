@@ -1,0 +1,23 @@
+{
+  "demoSrc": "launch/tour-demo.mp4",
+  "demoFrames": 177,
+  "sheetSrc": "launch/release-sheet.jpg",
+  "viewerSrc": "launch/viewer.mp4",
+  "viewerCuts": [
+    { "from": 2.2, "to": 3.6 },
+    { "from": 6.1, "to": 8.6 },
+    { "from": 11.3, "to": 13.3 }
+  ],
+  "downloadAtFrame": 136,
+  "downloadPoint": { "x": 0.79, "y": 0.83 },
+  "showSafeZones": false,
+  "beats": [
+    { "kind": "hook", "durationInFrames": 84, "narration": "Your agent ships the feature. Now it makes the video, too." },
+    { "kind": "terminal", "durationInFrames": 105, "narration": "It captures your running app and cuts it in Remotion." },
+    { "kind": "sound", "durationInFrames": 180, "narration": "Now it has sound. A voiceover, a score written for the cut, and synced subtitles." },
+    { "kind": "demo", "durationInFrames": 177 },
+    { "kind": "review", "durationInFrames": 105, "narration": "Before you see it, a fresh agent reviews every frame." },
+    { "kind": "viewer", "durationInFrames": 156, "narration": "Then it lands on your phone, ready to post." },
+    { "kind": "cta", "durationInFrames": 90, "narration": "Open source. Link below." }
+  ]
+}

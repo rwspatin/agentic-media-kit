@@ -16,9 +16,10 @@ The full pipeline as a skill: `.claude/skills/agentic-media/SKILL.md`.
 | `apps/studio/src/Root.tsx` | Composition registry and default props |
 | `apps/studio/src/components/` | `Promo` (typographic), `ScreenTour` (device mockup + captions), `DemoScreen` (generated placeholder UI), `DeviceFrame`, `shared` |
 | `apps/studio/src/audio/` | Audio modes for any composition: `schema` (zod + `flagsFor(mode)`), `AudioLayer` (voice clips + ducked music bed), `Subtitles` (word-synced). Wired into `ScreenTour` via the optional `audio` prop. See `docs/audio.md`. |
-| `apps/studio/examples/` | Example props files (`tour-audio.json`: a narrated tour on demo media). |
+| `apps/studio/examples/` | Example props files (`tour-audio.json`: a narrated tour on demo media; `release.json`: the release video). |
 | `apps/studio/src/before-after/` | `BeforeAfter`: two versions of a page scrolled in sync with captions, a phone scene, a checklist, and an outro. Assets come from `scripts/capture-before-after.sh`. Demo pages live in `apps/studio/before-after-demo/`. |
 | `apps/studio/src/launch/` | The kit's launch video (terminal scene in React, real captures, jump cuts, cross-dissolves). Copy it as a starting point. |
+| `apps/studio/src/release/` | "Now with sound": the release video for the audio modes, in the launch look but beat-driven (`beats[]`), so `scripts/audio.mjs` voices it, snaps it to the score and lints it. Props in `examples/release.json`. |
 | `apps/studio/src/theme.ts` | Fonts, brand defaults, Instagram safe zones |
 | `apps/studio/src/type-scale.json` | Overlay font sizes (px at 1080 wide) shared by `ScreenTour`, `Subtitles` and the lint's `font-min` rule (>= 28 px). |
 | `apps/studio/public/` | Capture and audio assets (`captures/`, `shots/`, `audio/`), gitignored. `launch/` is the exception: small public footage for the launch example. |
@@ -59,7 +60,7 @@ cp apps/media-viewer/.env.example apps/media-viewer/.env   # fill in; COOKIE_SEC
 npm run viewer
 ```
 
-Compositions: `Promo-Reel`, `Promo-Feed`, `Promo-Square` (video), `Promo-Still`, `Reel-Cover`, `Square-Still` (stills), `Tour-Reel`, `Tour-Feed` (screen tour; duration is computed from `beats`), `BeforeAfter-Landscape`, `BeforeAfter-Feed` (before/after of a page; duration and `meta.json` come from `calculateMetadata`, see `docs/before-after.md`), and `Launch-Reel`, `Launch-Feed`, `Launch-Cover` (the kit's own launch video, a worked example of the whole pipeline: `src/launch/README.md`).
+Compositions: `Promo-Reel`, `Promo-Feed`, `Promo-Square` (video), `Promo-Still`, `Reel-Cover`, `Square-Still` (stills), `Tour-Reel`, `Tour-Feed` (screen tour; duration is computed from `beats`), `BeforeAfter-Landscape`, `BeforeAfter-Feed` (before/after of a page; duration and `meta.json` come from `calculateMetadata`, see `docs/before-after.md`), `Launch-Reel`, `Launch-Feed`, `Launch-Cover` (the kit's own launch video, a worked example of the whole pipeline: `src/launch/README.md`), and `Release-Feed`, `Release-Reel`, `Release-Cover` (the "now with sound" release video with voice, score and subtitles; duration from `beats`: `src/release/README.md`).
 
 ## Gotchas (read these)
 
