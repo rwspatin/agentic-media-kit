@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// Generate the audio for a Tour-* render (voiceover per beat, a music bed)
+// Generate the audio for a Tour-* (or any beats-driven) render (voiceover per beat, a music bed)
 // and write a ready-to-render props file. Node >= 18, no npm deps; needs
 // ffmpeg + ffprobe on PATH. See docs/audio.md.
 //
@@ -10,6 +10,13 @@
 //       [--tts gemini|elevenlabs|say] [--voice <name>] [--style "<delivery direction>"] [--fps 30]
 //       [--music procedural|synth|lyria|elevenlabs|<path to audio file>] [--music-prompt "<text>"]
 //       [--mood calm|tech|upbeat|warm] [--bpm <n>] [--key <tonic>] [--no-beat-sync] [--no-lint]
+//       [--voice-rate <0.5-2>]   speed the voice up/down (pitch kept; default 1)
+//       [--composition <id>]   for the printed render command and the lint (default Tour-Reel/Tour-Feed by placement)
+//
+// Any composition whose props have `beats[]` with `durationInFrames` and an
+// optional `narration` works (Tour-*, Release-*). Beats without narration
+// keep their length (e.g. a clip of fixed duration); beat sync only ever
+// lengthens them.
 //
 // --music procedural (default) renders a score with scripts/score/make_score.py
 // (python3, stdlib only) and snaps every beat's length up to whole musical
@@ -73,7 +80,9 @@ const fps = Number(opts.fps ?? 30);
 const tts = opts.tts ?? "gemini";
 let musicSource = opts.music ?? "procedural";
 const placement = opts.placement ?? "reel";
+const voiceRate = Number(opts["voice-rate"] ?? 1);
 if (!["gemini", "elevenlabs", "say"].includes(tts)) die(`unknown --tts ${tts}`);
+if (!(voiceRate >= 0.5 && voiceRate <= 2)) die(`--voice-rate ${opts["voice-rate"]}: expected 0.5-2`);
 if (!["reel", "feed", "landscape", "story"].includes(placement)) die(`unknown --placement ${placement}`);
 
 for (const bin of ["ffmpeg", "ffprobe"]) {
@@ -374,6 +383,19 @@ const voiceBeat = async (beat, index) => {
   return { src: rel(out), durationSec, words };
 };
 
+// --voice-rate: a time-stretched copy of the cached clip (ffmpeg atempo keeps
+// the pitch), so changing the rate never calls the TTS again. Word times
+// scale with it.
+const withRate = (voice, index) => {
+  if (voiceRate === 1) return voice;
+  const src = join(PUBLIC, voice.src);
+  const out = join(assetDir, `beat-${index + 1}-x${voiceRate}.wav`);
+  ffmpeg(["-i", src, "-af", `atempo=${voiceRate}`, "-ar", "48000", "-ac", "1", out]);
+  const durationSec = Math.round(durationOf(out) * 1000) / 1000;
+  const words = voice.words.map((w) => ({ ...w, startMs: Math.round(w.startMs / voiceRate), endMs: Math.round(w.endMs / voiceRate) }));
+  return { src: rel(out), durationSec, words };
+};
+
 // --- Music --------------------------------------------------------------
 const MUSIC_LOUDNESS = { I: -18, TP: -2, LRA: 11 };
 
@@ -494,10 +516,10 @@ const makeMusic = async (seconds, timeline) => {
 // --- Main ---------------------------------------------------------------
 const beats = props.beats.map((b) => ({ ...b }));
 if (wantVoice) {
-  log(`voice (${tts}):`);
+  log(`voice (${tts}${voiceRate === 1 ? "" : `, rate ${voiceRate}`}):`);
   for (const [i, beat] of beats.entries()) {
     if (!beat.narration?.trim()) continue;
-    beat.voice = await voiceBeat(beat, i);
+    beat.voice = withRate(await voiceBeat(beat, i), i);
     const need = Math.ceil((VOICE_LEAD / fps + beat.voice.durationSec + VOICE_TAIL) * fps);
     beat.durationInFrames = Math.max(beat.durationInFrames, need);
   }
@@ -558,7 +580,7 @@ beats.forEach((b, i) => {
   log(`${String(i + 1).padStart(4)}  ${b.kind.padEnd(6)}  ${v}  ${String(b.durationInFrames).padStart(6)}${was}`);
 });
 log(`total ${totalFrames} frames = ${totalSec.toFixed(1)} s @ ${fps} fps${beatSync ? `, cuts on the beat at ${score.bpm} bpm` : ""}`);
-const comp = ["feed", "landscape"].includes(placement) ? "Tour-Feed" : "Tour-Reel";
+const comp = opts.composition ?? (["feed", "landscape"].includes(placement) ? "Tour-Feed" : "Tour-Reel");
 log("");
 log("render:");
 log(`  cd apps/studio && npx remotion render ${comp} out/${slug}.mp4 --props=${resolve(outPath)} --codec=h264 --pixel-format=yuv420p --audio-codec=aac`);

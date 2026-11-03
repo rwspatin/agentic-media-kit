@@ -56,7 +56,11 @@ node scripts/audio.mjs <in-props.json> <out-props.json> --name <slug>
     [--tts gemini|elevenlabs|say] [--voice <name>] [--style "<delivery direction>"] [--fps 30]
     [--music procedural|synth|lyria|elevenlabs|<path to audio file>] [--music-prompt "<text>"]
     [--mood calm|tech|upbeat|warm] [--bpm <n>] [--key <tonic>] [--no-beat-sync] [--no-lint]
+    [--voice-rate <0.5-2>] [--composition <id>]
 ```
+
+- `--voice-rate 1.2` speeds every clip up (ffmpeg `atempo`, pitch kept) from the cached TTS output, so it never calls the provider again; word times scale with it. Use it when a slow delivery makes the video run long.
+- `--composition` names the composition in the printed render command and the lint (default `Tour-Reel`, or `Tour-Feed` for `--placement feed|landscape`). Any props with `beats[]` work, e.g. `Release-Feed`; beats without `narration` keep their length.
 
 - Assets go to `apps/studio/public/audio/<slug>/` (gitignored). Props reference them relative to `public/` (`audio/<slug>/beat-1.wav`).
 - Every voice clip is trimmed of leading/trailing silence, two-pass loudness-normalized to **-16 LUFS / -1.5 dBTP**, and written as 48 kHz mono WAV.

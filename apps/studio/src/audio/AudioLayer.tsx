@@ -24,13 +24,30 @@ const duckAmount = (frame: number, segments: VoiceSegment[]) =>
     return Math.max(max, d);
   }, 0);
 
-// Voiceover clips + an optional looping music bed that fades in/out and ducks
-// under the voice. Reusable by any composition: pass absolute-frame segments.
+// A stretch of the timeline where the music bed goes silent (e.g. a scene
+// that plays a clip with its own soundtrack). Absolute frames.
+export type MusicGap = {
+  fromFrame: number;
+  durationInFrames: number;
+};
+
+// 0 outside every gap, 1 inside one, with the same ramps as ducking.
+const gapAmount = (frame: number, gaps: MusicGap[]) =>
+  gaps.reduce((max, g) => {
+    const end = g.fromFrame + g.durationInFrames;
+    const d = interpolate(frame, [g.fromFrame - DUCK_RAMP, g.fromFrame, end, end + DUCK_RAMP], [0, 1, 1, 0], clamp);
+    return Math.max(max, d);
+  }, 0);
+
+// Voiceover clips + an optional looping music bed that fades in/out, ducks
+// under the voice and drops to silence in `musicGaps`. Reusable by any
+// composition: pass absolute-frame segments.
 export const AudioLayer: React.FC<{
   voice: VoiceSegment[];
   music?: MusicConfig;
   voiceVolume?: number;
-}> = ({ voice, music, voiceVolume = 1 }) => {
+  musicGaps?: MusicGap[];
+}> = ({ voice, music, voiceVolume = 1, musicGaps = [] }) => {
   const { durationInFrames } = useVideoConfig();
   const base = music?.volume ?? MUSIC_VOLUME;
   const duckTo = music?.duckTo ?? DUCK_TO;
@@ -41,7 +58,8 @@ export const AudioLayer: React.FC<{
       interpolate(frame, [durationInFrames - MUSIC_FADE_OUT, durationInFrames], [1, 0], clamp),
     );
     const duck = 1 - duckAmount(frame, voice) * (1 - duckTo);
-    return base * fade * duck;
+    const gap = 1 - gapAmount(frame, musicGaps);
+    return base * fade * duck * gap;
   };
 
   return (
